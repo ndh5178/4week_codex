@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Virtual DOM & Diff Algorithm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ══════════════════════════════════════════
+       CSS Custom Properties
+    ══════════════════════════════════════════ */
+    :root {
+      --bg-base:       #080b14;
+      --bg-panel:      #0d1120;
+      --bg-card:       #111827;
+      --bg-hover:      #1a2235;
+      --border:        #1e2d45;
+      --border-bright: #2a3f60;
+
+      --cyan:    #0ff5ce;
+      --cyan-dim:#0bc9a8;
+      --red:     #ff3e6c;
+      --yellow:  #ffd93d;
+      --blue:    #4fc3f7;
+      --purple:  #ce93d8;
+      --green:   #69f0ae;
+
+      --text-primary:   #e8f0fe;
+      --text-secondary: #8898b4;
+      --text-muted:     #445570;
+
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --radius: 6px;
+      --transition: 0.18s ease;
+    }
+
+    /* ══════════════════════════════════════════
+       Reset & Base
+    ══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Dot grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #1e2d45 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ══════════════════════════════════════════
+       App Layout
+    ══════════════════════════════════════════ */
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 0 14px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+
+    .header-left h1 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--cyan), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+      padding: 2px 7px;
+      border-radius: 20px;
+      opacity: 0.7;
+    }
+
+    header .meta { font-size: 11px; color: var(--text-muted); }
+
+    /* ── Panel base ── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .dc { color: var(--cyan); }
+    .dy { color: var(--yellow); }
+    .db { color: var(--blue); }
+    .dp { color: var(--purple); }
+    .dg { color: var(--green); }
+    .dr { color: var(--red); }
+
+    /* ── Main split ── */
+    .main-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 860px) { .main-split { grid-template-columns: 1fr; } }
+
+    /* ── Real DOM panel ── */
+    #real-dom-area {
+      flex: 1;
+      padding: 14px;
+      overflow: auto;
+      min-height: 250px;
+    }
+
+    /* Styles for content inside real dom */
+    #real-dom-area .container { padding: 4px; }
+    #real-dom-area h1 { font-family: var(--font-display); font-size: 17px; margin-bottom: 8px; color: var(--text-primary); }
+    #real-dom-area h2 { font-family: var(--font-display); font-size: 14px; margin-bottom: 6px; color: var(--text-primary); }
+    #real-dom-area p  { color: var(--text-secondary); margin-bottom: 8px; font-size: 12px; }
+    #real-dom-area ul { list-style: none; margin: 8px 0; }
+    #real-dom-area li { padding: 4px 10px; border-left: 2px solid var(--border); margin-bottom: 4px; font-size: 12px; transition: all 0.2s; }
+    #real-dom-area li.active { border-left-color: var(--cyan); color: var(--cyan); }
+    #real-dom-area .card { border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin: 8px 0; background: var(--bg-card); }
+    #real-dom-area button { background: var(--cyan); color: #000; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: var(--font-mono); font-weight: 700; }
+    #real-dom-area footer { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+    #real-dom-area span.copyright { font-size: 11px; color: var(--text-muted); }
+
+    /* Patch flash animation */
+    @keyframes nodeFlash {
+      0%   { outline: 2px solid transparent; background: transparent; }
+      25%  { outline: 2px solid var(--cyan); background: rgba(15,245,206,0.14); }
+      100% { outline: 2px solid transparent; background: transparent; }
+    }
+    .node-patched { animation: nodeFlash 0.85s ease-out forwards; border-radius: 2px; }
+
+    /* ── Editor panel ── */
+    .right-panel { display: flex; flex-direction: column; }
+
+    #html-editor {
+      flex: 1;
+      width: 100%;
+      min-height: 220px;
+      background: #060910;
+      color: var(--cyan);
+      border: none;
+      outline: none;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.75;
+      resize: vertical;
+      caret-color: var(--cyan);
+      tab-size: 2;
+    }
+    #html-editor:focus { box-shadow: inset 0 0 0 1px var(--cyan-dim); }
+
+    .preview-sep {
+      height: 1px;
+      background: var(--border);
+      position: relative;
+    }
+    .preview-sep::after {
+      content: 'LIVE PREVIEW';
+      position: absolute;
+      left: 12px; top: -9px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      color: var(--text-muted);
+      background: var(--bg-panel);
+      padding: 0 6px;
+    }
+
+    #html-preview {
+      padding: 12px 14px;
+      min-height: 80px;
+      max-height: 160px;
+      overflow: auto;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ── Controls bar ── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-bright);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px rgba(15,245,206,0.2);
+    }
+    .btn:disabled { opacity: 0.32; cursor: not-allowed; }
+
+    .btn-patch {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+      font-weight: 700;
+    }
+    .btn-patch:hover:not(:disabled) {
+      background: var(--cyan-dim);
+      color: #000;
+      box-shadow: 0 0 18px rgba(15,245,206,0.5);
+    }
+
+    /* ── History timeline ── */
+    .history-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      overflow-x: auto;
+      padding: 2px 4px;
+    }
+
+    .history-pill {
+      flex-shrink: 0;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 10px;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--bg-card);
+    }
+    .history-pill:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+    .history-pill.active { background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 700; }
+
+    .stat-chip {
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .stat-chip b { color: var(--cyan); font-weight: 700; }
+
+    /* ── Diff log ── */
+    #diff-log {
+      max-height: 230px;
+      overflow-y: auto;
+    }
+
+    .diff-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .log-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-entry:hover { background: var(--bg-hover); }
+
+    .log-badge {
+      flex-shrink: 0;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border-left: 3px solid currentColor;
+      min-width: 64px;
+      text-align: center;
+    }
+    .lb-INSERT  { color: var(--green);  background: rgba(105,240,174,0.08); }
+    .lb-REMOVE  { color: var(--red);    background: rgba(255,62,108,0.08); }
+    .lb-REPLACE { color: var(--yellow); background: rgba(255,217,61,0.08); }
+    .lb-PROPS   { color: var(--blue);   background: rgba(79,195,247,0.08); }
+    .lb-TEXT    { color: var(--purple); background: rgba(206,147,216,0.08); }
+
+    .log-detail { flex: 1; min-width: 0; }
+    .log-path   { color: var(--text-secondary); font-size: 11px; margin-bottom: 2px; }
+    .log-change { color: var(--text-muted); font-size: 11px; word-break: break-all; }
+    .log-change .old { color: var(--red); text-decoration: line-through; }
+    .log-change .nw  { color: var(--green); }
+    .log-change .arr { color: var(--text-muted); margin: 0 4px; }
+    .log-ts { flex-shrink: 0; font-size: 10px; color: var(--text-muted); padding-top: 2px; }
+
+    /* ── VTree split ── */
+    .vtree-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 860px) { .vtree-split { grid-template-columns: 1fr; } }
+
+    .vtree-body {
+      padding: 8px;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    /* ── Tree node ── */
+    .tree-node { position: relative; padding-left: 14px; }
+    .tree-node::before {
+      content: '';
+      position: absolute;
+      left: 5px; top: 0; bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+    .tree-node:last-child::before { bottom: 50%; }
+
+    .tree-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background var(--transition);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .tree-row:hover { background: var(--bg-hover); }
+
+    @keyframes rowGlow {
+      0%,100% { background: rgba(15,245,206,0.07); }
+      50%      { background: rgba(15,245,206,0.18); }
+    }
+    .tree-row.changed {
+      border-left: 2px solid var(--cyan);
+      animation: rowGlow 1s ease-in-out;
+    }
+
+    .tree-toggle {
+      flex-shrink: 0;
+      width: 12px;
+      font-size: 8px;
+      color: var(--text-muted);
+      transition: transform 0.15s;
+      user-select: none;
+    }
+    .tree-toggle.open { transform: rotate(90deg); }
+
+    .tree-tag  { color: var(--red); font-size: 11px; }
+    .tree-txt  { color: var(--text-muted); font-size: 11px; font-style: italic; }
+    .tree-prop { font-size: 10px; color: var(--yellow); background: rgba(255,217,61,0.07); padding: 0 4px; border-radius: 2px; margin-left: 2px; }
+
+    .tree-children {
+      overflow: hidden;
+      transition: max-height 0.2s ease;
+    }
+    .tree-children.collapsed { max-height: 0 !important; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ── Error toast ── */
+    #error-toast {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: var(--red);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+      z-index: 999;
+      max-width: 320px;
+    }
+    #error-toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="header-left">
+      <h1>🌳 Virtual DOM &amp; Diff Algorithm</h1>
+      <span class="badge">Vanilla JS</span>
+    </div>
+    <span class="meta">React의 핵심을 밑바닥부터 구현합니다.</span>
+  </header>
+
+  <!-- ── Main split ── -->
+  <div class="main-split">
+    <!-- Left: Real DOM -->
+    <div class="panel">
+      <div class="panel-header"><span class="dot dc"></span>Real DOM — Patch 결과 렌더링</div>
+      <div id="real-dom-area"></div>
+    </div>
+
+    <!-- Right: Editor + Preview -->
+    <div class="panel right-panel">
+      <div class="panel-header"><span class="dot dy"></span>HTML 편집기 — 수정 후 Patch 적용</div>
+      <textarea id="html-editor" spellcheck="false"></textarea>
+      <div class="preview-sep"></div>
+      <div id="html-preview"></div>
+    </div>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls-bar">
+    <button class="btn" id="btn-undo" disabled>◀ 뒤로</button>
+    <button class="btn btn-patch" id="btn-patch">▶ Patch 적용</button>
+    <button class="btn" id="btn-redo" disabled>앞으로 ▶</button>
+    <div class="history-wrap" id="history-wrap"></div>
+    <div class="stat-chip" id="stat-chip">State <b>1 / 1</b></div>
+  </div>
+
+  <!-- ── Diff Log ── -->
+  <div class="panel" style="margin-top: 0;">
+    <div class="panel-header"><span class="dot db"></span>Diff 로그 패널</div>
+    <div id="diff-log">
+      <div class="diff-empty">Patch를 적용하면 변경 사항이 여기에 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ── VTree Visualization ── -->
+  <div class="vtree-split">
+    <div class="panel">
+      <div class="panel-header"><span class="dot dr"></span>Old VTree</div>
+      <div class="vtree-body" id="vtree-old"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="dot dc"></span>New VTree</div>
+      <div class="vtree-body" id="vtree-new"></div>
+    </div>
+  </div>
+
+</div>
+<div id="error-toast"></div>
+
+<script>
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 1: VNode 데이터 구조 및 생성 헬퍼            ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/** 자기 닫힘(void) 태그 집합 */
+const VOID_TAGS = new Set([
+  'area','base','br','col','embed','hr','img','input',
+  'link','meta','param','source','track','wbr'
+]);
+
+/**
+ * VNode 생성 헬퍼 함수
+ * @param {string}   tagName  - HTML 태그명
+ * @param {Object}   props    - 속성 객체
+ * @param {...*}     children - 자식 노드(VNode 또는 문자열)
+ * @returns {VNode}
+ */
+function createElement(tagName, props = {}, ...children) {
+  const flat = children.flat(Infinity).map(c =>
+    typeof c === 'string' ? { type: 'text', text: c, key: null } : c
+  ).filter(Boolean);
+  return {
+    type: 'element',
+    tagName: tagName.toLowerCase(),
+    props: props || {},
+    children: flat,
+    key: (props && props['data-key']) || null,
+  };
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 2: DOM ↔ VNode 변환                         ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * 실제 DOM 요소를 VNode 트리로 변환
+ * @param {Node} node - 변환할 DOM 노드
+ * @returns {VNode|null}
+ */
+function domToVNode(node) {
+  if (!node) return null;
+
+  // 텍스트 노드 처리
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent;
+    if (!text.trim()) return null; // 공백 전용 텍스트 무시
+    return { type: 'text', text, key: null };
+  }
+
+  // 주석 및 기타 노드 무시
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+  // 속성 추출
+  const props = {};
+  for (const attr of node.attributes) {
+    props[attr.name] = attr.value;
+  }
+
+  // 자식 노드 재귀 변환
+  const children = [];
+  for (const child of node.childNodes) {
+    const vchild = domToVNode(child);
+    if (vchild) children.push(vchild);
+  }
+
+  return {
+    type: 'element',
+    tagName: node.tagName.toLowerCase(),
+    props,
+    children,
+    key: props['data-key'] || null,
+  };
+}
+
+/**
+ * VNode를 실제 DOM 요소로 변환 (innerHTML 사용 금지)
+ * @param {VNode} vnode
+ * @returns {Node}
+ */
+function vnodeToDOM(vnode) {
+  if (vnode.type === 'text') {
+    return document.createTextNode(vnode.text);
+  }
+
+  const el = document.createElement(vnode.tagName);
+
+  // 속성 설정
+  for (const [k, v] of Object.entries(vnode.props || {})) {
+    if (v !== null && v !== undefined) {
+      try { el.setAttribute(k, v); } catch (_) { /* 잘못된 속성명 무시 */ }
+    }
+  }
+
+  // void 태그는 자식 없음
+  if (!VOID_TAGS.has(vnode.tagName)) {
+    for (const child of (vnode.children || [])) {
+      el.appendChild(vnodeToDOM(child));
+    }
+  }
+
+  return el;
+}
+
+/**
+ * VNode를 HTML 문자열로 변환 (textarea 동기화용)
+ * @param {VNode}  vnode
+ * @param {number} indent
+ * @returns {string}
+ */
+function vnodeToHTML(vnode, indent = 0) {
+  if (!vnode) return '';
+  const pad = '  '.repeat(indent);
+
+  if (vnode.type === 'text') {
+    return pad + vnode.text.trim();
+  }
+
+  const tag = vnode.tagName;
+  const attrs = Object.entries(vnode.props || {})
+    .map(([k, v]) => ` ${k}="${v}"`)
+    .join('');
+
+  if (VOID_TAGS.has(tag)) return `${pad}<${tag}${attrs}>`;
+
+  const kids = (vnode.children || []);
+  if (kids.length === 0) return `${pad}<${tag}${attrs}></${tag}>`;
+
+  const inner = kids.map(c => vnodeToHTML(c, indent + 1)).join('\n');
+  return `${pad}<${tag}${attrs}>\n${inner}\n${pad}</${tag}>`;
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 3: Diff 알고리즘 (O(n), 5가지 케이스)       ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * VNode 서브트리의 전체 노드 수 계산 (DFS 인덱스 진행용)
+ * @param {VNode} vnode
+ * @returns {number}
+ */
+function countNodes(vnode) {
+  if (!vnode || vnode.type === 'text') return 1;
+  return 1 + (vnode.children || []).reduce((s, c) => s + countNodes(c), 0);
+}
+
+/**
+ * 두 props 객체 비교 → 변경된 항목만 반환
+ * 삭제된 prop는 { old: '값', new: null } 형태
+ * @param {Object} op - old props
+ * @param {Object} np - new props
+ * @returns {Object|null}
+ */
+function diffProps(op, np) {
+  const result = {};
+  const keys = new Set([...Object.keys(op || {}), ...Object.keys(np || {})]);
+  for (const k of keys) {
+    const ov = (op || {})[k] ?? null;
+    const nv = (np || {})[k] ?? null;
+    if (ov !== nv) result[k] = { old: ov, new: nv };
+  }
+  return Object.keys(result).length ? result : null;
+}
+
+/**
+ * 두 VNode 트리를 비교하여 patches 배열 반환
+ * 같은 레벨·같은 위치 노드만 비교 (O(n) 알고리즘)
+ *
+ * @param {VNode}    oldV    - 이전 VNode
+ * @param {VNode}    newV    - 새 VNode
+ * @param {Object[]} patches - 누적 패치 배열 (참조 전달)
+ * @param {{v:number}} idx  - DFS 인덱스 카운터 (참조 전달)
+ * @param {string}   path   - 디버그용 경로
+ */
+function diff(oldV, newV, patches, idx, path) {
+  patches = patches || [];
+  idx     = idx     || { v: 0 };
+  path    = path    || 'root';
+  const cur = idx.v;
+
+  // ─ 1. REPLACE: 타입 또는 태그명이 다름 ─
+  if (oldV && newV &&
+      (oldV.type !== newV.type ||
+       (oldV.type === 'element' && oldV.tagName !== newV.tagName))) {
+    patches.push({ type: 'REPLACE', index: cur, oldV, newV, path });
+    // 교체 후 자식은 비교 불필요
+    return patches;
+  }
+
+  // ─ 2. TEXT: 텍스트 내용 변경 ─
+  if (oldV && newV && oldV.type === 'text' && newV.type === 'text') {
+    if (oldV.text !== newV.text) {
+      patches.push({ type: 'TEXT', index: cur, oldText: oldV.text, text: newV.text, path });
+    }
+    return patches;
+  }
+
+  // ─ 3. PROPS: 속성 변경 ─
+  if (oldV && newV && oldV.type === 'element') {
+    const pd = diffProps(oldV.props, newV.props);
+    if (pd) patches.push({ type: 'PROPS', index: cur, propsDiff: pd, path });
+
+    // ─ 4+5. CHILDREN: 자식 비교 (INSERT / REMOVE / 재귀) ─
+    const oc = oldV.children || [];
+    const nc = newV.children || [];
+    const maxLen = Math.max(oc.length, nc.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      idx.v++;
+      const childPath = `${path} > ${(oc[i] || nc[i])?.tagName || 'text'}[${i}]`;
+
+      if (i >= nc.length) {
+        // 자식 삭제
+        patches.push({ type: 'REMOVE', index: idx.v, path: childPath });
+        idx.v += countNodes(oc[i]) - 1;
+      } else if (i >= oc.length) {
+        // 자식 삽입
+        patches.push({ type: 'INSERT', index: idx.v, newV: nc[i], path: childPath });
+        idx.v += countNodes(nc[i]) - 1;
+      } else {
+        // 재귀 비교
+        diff(oc[i], nc[i], patches, idx, childPath);
+      }
+    }
+  }
+
+  return patches;
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 4: Patch 적용 (네이티브 DOM API만 사용)     ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * DFS 순서로 DOM 트리를 순회하여 index → Node 맵 생성
+ * (domToVNode와 동일한 공백 무시 로직 사용)
+ * @param {Node}       node
+ * @param {Map}        map
+ * @param {{v:number}} idx
+ */
+function buildIndexMap(node, map, idx) {
+  map = map || new Map();
+  idx = idx || { v: 0 };
+  map.set(idx.v, node);
+  if (node.nodeType !== Node.ELEMENT_NODE) return map;
+  for (const child of node.childNodes) {
+    if (child.nodeType === Node.TEXT_NODE && !child.textContent.trim()) continue;
+    idx.v++;
+    buildIndexMap(child, map, idx);
+  }
+  return map;
+}
+
+/** 요소에 flash 애니메이션 적용 */
+function flashNode(el) {
+  if (!el || el.nodeType === Node.TEXT_NODE) return;
+  el.classList.add('node-patched');
+  setTimeout(() => el.classList.remove('node-patched'), 900);
+}
+
+/**
+ * patches를 실제 DOM에 적용 (innerHTML 사용 금지)
+ * @param {Node}     domRoot
+ * @param {Object[]} patches
+ */
+function patch(domRoot, patches) {
+  if (!patches || !patches.length) return;
+  const map = buildIndexMap(domRoot);
+
+  for (const p of patches) {
+    const target = map.get(p.index);
+
+    switch (p.type) {
+      case 'REPLACE': {
+        if (!target) break;
+        const parent = target.parentNode;
+        if (!parent) break;
+        const neo = vnodeToDOM(p.newV);
+        parent.replaceChild(neo, target);
+        flashNode(neo);
+        break;
+      }
+      case 'TEXT': {
+        if (!target) break;
+        target.textContent = p.text;
+        flashNode(target.parentElement);
+        break;
+      }
+      case 'PROPS': {
+        if (!target || target.nodeType !== Node.ELEMENT_NODE) break;
+        for (const [k, ch] of Object.entries(p.propsDiff)) {
+          if (ch.new === null) {
+            target.removeAttribute(k);
+          } else {
+            target.setAttribute(k, ch.new);
+          }
+        }
+        flashNode(target);
+        break;
+      }
+      case 'INSERT': {
+        // 삽입 대상 위치의 노드가 있으면 그 앞에, 없으면 부모 끝에 추가
+        const neo = vnodeToDOM(p.newV);
+        if (target && target.parentNode) {
+          target.parentNode.insertBefore(neo, target);
+        } else {
+          // 부모 탐색: index - 1 노드의 부모
+          const prevNode = map.get(p.index - 1);
+          const parent = prevNode
+            ? (prevNode.nodeType === Node.ELEMENT_NODE ? prevNode : prevNode.parentNode)
+            : domRoot;
+          if (parent) parent.appendChild(neo);
+        }
+        flashNode(neo);
+        break;
+      }
+      case 'REMOVE': {
+        if (!target) break;
+        const parent = target.parentNode;
+        if (parent) {
+          flashNode(parent);
+          parent.removeChild(target);
+        }
+        break;
+      }
+    }
+  }
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 5: HTML 파서 유틸                           ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * HTML 문자열을 파싱하여 첫 번째 Element 반환
+ * 파싱 오류 시 null 반환
+ * @param {string} html
+ * @returns {Element|null}
+ */
+function parseHTML(html) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html.trim(), 'text/html');
+    if (doc.querySelector('parsererror')) return null;
+    return doc.body.firstElementChild || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 6: State History Manager                    ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+const history = {
+  states: [],   // VNode 스냅샷 배열
+  cursor: -1,   // 현재 위치
+
+  push(vnode) {
+    // 현재 이후 기록 삭제 (undo 후 새 변경 시)
+    this.states = this.states.slice(0, this.cursor + 1);
+    this.states.push(deepCopy(vnode));
+    this.cursor = this.states.length - 1;
+    this._sync();
+  },
+
+  undo() {
+    if (!this.canUndo()) return null;
+    this.cursor--;
+    this._sync();
+    return deepCopy(this.states[this.cursor]);
+  },
+
+  redo() {
+    if (!this.canRedo()) return null;
+    this.cursor++;
+    this._sync();
+    return deepCopy(this.states[this.cursor]);
+  },
+
+  goTo(i) {
+    if (i < 0 || i >= this.states.length) return null;
+    this.cursor = i;
+    this._sync();
+    return deepCopy(this.states[this.cursor]);
+  },
+
+  getCurrent() {
+    return this.cursor >= 0 ? deepCopy(this.states[this.cursor]) : null;
+  },
+
+  canUndo() { return this.cursor > 0; },
+  canRedo() { return this.cursor < this.states.length - 1; },
+
+  _sync() {
+    renderTimeline();
+    document.getElementById('btn-undo').disabled = !this.canUndo();
+    document.getElementById('btn-redo').disabled = !this.canRedo();
+    document.getElementById('stat-chip').innerHTML =
+      `State <b>${this.cursor + 1} / ${this.states.length}</b>`;
+  },
+};
+
+/** VNode 깊은 복사 */
+function deepCopy(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 7: VTree 시각화 렌더링                       ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * VNode 한 노드를 트리 행 Element로 변환
+ * @param {VNode}    vnode
+ * @param {Set}      changedIdx - 변경된 DFS 인덱스 집합
+ * @param {{v:number}} counter
+ * @returns {HTMLElement}
+ */
+function buildTreeNode(vnode, changedIdx, counter) {
+  const cur = counter.v;
+  const wrap = document.createElement('div');
+  wrap.className = 'tree-node';
+
+  const row = document.createElement('div');
+  row.className = 'tree-row' + (changedIdx.has(cur) ? ' changed' : '');
+
+  if (vnode.type === 'text') {
+    const sp = document.createElement('span');
+    sp.className = 'tree-txt';
+    const t = vnode.text.trim();
+    sp.textContent = `"${t.length > 42 ? t.slice(0, 42) + '…' : t}"`;
+    row.appendChild(sp);
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+  const hasKids = vnode.children && vnode.children.length > 0;
+
+  // 토글 아이콘
+  const tog = document.createElement('span');
+  tog.className = 'tree-toggle' + (hasKids ? ' open' : '');
+  tog.textContent = hasKids ? '▶' : '·';
+  row.appendChild(tog);
+
+  // 태그
+  const tagEl = document.createElement('span');
+  tagEl.className = 'tree-tag';
+  tagEl.textContent = `<${vnode.tagName}>`;
+  row.appendChild(tagEl);
+
+  // 주요 속성 표시
+  for (const k of ['id', 'class', 'data-key', 'style']) {
+    const v = (vnode.props || {})[k];
+    if (!v) continue;
+    const sp = document.createElement('span');
+    sp.className = 'tree-prop';
+    sp.textContent = `${k}="${v.length > 22 ? v.slice(0, 22) + '…' : v}"`;
+    row.appendChild(sp);
+  }
+
+  wrap.appendChild(row);
+
+  if (hasKids) {
+    const kidsEl = document.createElement('div');
+    kidsEl.className = 'tree-children';
+    let totalH = 0;
+
+    for (const kid of vnode.children) {
+      counter.v++;
+      const kidEl = buildTreeNode(kid, changedIdx, counter);
+      kidsEl.appendChild(kidEl);
+      totalH += 26;
+    }
+
+    kidsEl.style.maxHeight = (totalH + 400) + 'px';
+    wrap.appendChild(kidsEl);
+
+    row.addEventListener('click', () => {
+      const collapsed = kidsEl.classList.toggle('collapsed');
+      tog.classList.toggle('open', !collapsed);
+    });
+  }
+
+  return wrap;
+}
+
+/**
+ * VNode 트리 전체를 컨테이너에 렌더링
+ * @param {VNode}       vnode
+ * @param {Set<number>} changedIdx
+ * @param {HTMLElement} container
+ */
+function renderVTree(vnode, changedIdx, container) {
+  container.innerHTML = '';
+  if (!vnode) { container.textContent = '(비어 있음)'; return; }
+  container.appendChild(buildTreeNode(vnode, changedIdx, { v: 0 }));
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 8: Diff 로그 렌더링                         ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/** HTML 특수문자 이스케이프 */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/**
+ * 패치 배열을 Diff 로그 패널에 렌더링
+ * @param {Object[]} patches
+ */
+function renderDiffLog(patches) {
+  const logEl = document.getElementById('diff-log');
+  logEl.innerHTML = '';
+
+  if (!patches.length) {
+    logEl.innerHTML = '<div class="diff-empty">✓ 변경 사항 없음 (No changes detected)</div>';
+    return;
+  }
+
+  const ts = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+
+  for (const p of patches) {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+
+    const badge = document.createElement('div');
+    badge.className = `log-badge lb-${p.type}`;
+    badge.textContent = p.type;
+
+    const detail = document.createElement('div');
+    detail.className = 'log-detail';
+
+    const pathEl = document.createElement('div');
+    pathEl.className = 'log-path';
+    pathEl.textContent = p.path || 'root';
+
+    const changeEl = document.createElement('div');
+    changeEl.className = 'log-change';
+
+    switch (p.type) {
+      case 'REPLACE':
+        changeEl.innerHTML =
+          `<span class="old">&lt;${esc(p.oldV?.tagName||'?')}&gt;</span>` +
+          `<span class="arr">→</span>` +
+          `<span class="nw">&lt;${esc(p.newV?.tagName||'?')}&gt;</span>`;
+        break;
+      case 'TEXT':
+        changeEl.innerHTML =
+          `<span class="old">"${esc(p.oldText||'')}"</span>` +
+          `<span class="arr">→</span>` +
+          `<span class="nw">"${esc(p.text||'')}"</span>`;
+        break;
+      case 'PROPS': {
+        const parts = Object.entries(p.propsDiff).map(([k, ch]) =>
+          `<span class="old">${esc(k)}="${esc(ch.old??'')}"</span>` +
+          `<span class="arr">→</span>` +
+          `<span class="nw">${esc(k)}="${esc(ch.new??'')}"</span>`
+        );
+        changeEl.innerHTML = parts.join(' &nbsp;|&nbsp; ');
+        break;
+      }
+      case 'INSERT':
+        changeEl.innerHTML = `<span class="nw">+ &lt;${esc(p.newV?.tagName||'text')}&gt; 삽입</span>`;
+        break;
+      case 'REMOVE':
+        changeEl.innerHTML = `<span class="old">− 노드 제거 (idx:${p.index})</span>`;
+        break;
+    }
+
+    detail.appendChild(pathEl);
+    detail.appendChild(changeEl);
+
+    const tsEl = document.createElement('div');
+    tsEl.className = 'log-ts';
+    tsEl.textContent = ts;
+
+    entry.appendChild(badge);
+    entry.appendChild(detail);
+    entry.appendChild(tsEl);
+    logEl.appendChild(entry);
+  }
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 9: 타임라인 렌더링                           ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+function renderTimeline() {
+  const wrap = document.getElementById('history-wrap');
+  wrap.innerHTML = '';
+  for (let i = 0; i < history.states.length; i++) {
+    const pill = document.createElement('div');
+    pill.className = 'history-pill' + (i === history.cursor ? ' active' : '');
+    pill.textContent = i === 0 ? '초기' : `#${i}`;
+    pill.title = `State ${i}로 이동`;
+    pill.addEventListener('click', () => {
+      const vnode = history.goTo(i);
+      if (vnode) applyState(vnode);
+    });
+    wrap.appendChild(pill);
+  }
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 10: 에러 토스트                             ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+let _toastTimer = null;
+function showError(msg) {
+  const el = document.getElementById('error-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 11: 상태 적용 (undo/redo/goTo 공통)         ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/**
+ * VNode로 실제 영역과 편집기를 동기화
+ * @param {VNode} vnode
+ */
+function applyState(vnode) {
+  // Real DOM 재빌드
+  const area = document.getElementById('real-dom-area');
+  area.innerHTML = '';
+  area.appendChild(vnodeToDOM(vnode));
+
+  // 편집기 동기화
+  document.getElementById('html-editor').value = vnodeToHTML(vnode);
+  updatePreview();
+
+  // 트리 초기화 (변경 없음)
+  renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
+  renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+
+  // 로그 초기화
+  document.getElementById('diff-log').innerHTML =
+    '<div class="diff-empty">히스토리를 이동했습니다. Patch를 적용하면 변경사항이 표시됩니다.</div>';
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 12: 미리보기 업데이트                        ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+function updatePreview() {
+  const editor = document.getElementById('html-editor');
+  const preview = document.getElementById('html-preview');
+  const parsed = parseHTML(editor.value);
+  preview.innerHTML = '';
+  if (parsed) {
+    preview.appendChild(parsed.cloneNode(true));
+  } else if (editor.value.trim()) {
+    preview.textContent = '⚠ 유효하지 않은 HTML';
+    preview.style.color = 'var(--red)';
+    return;
+  }
+  preview.style.color = '';
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  Section 13: 초기 샘플 HTML & 앱 초기화              ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+const INITIAL_HTML = `<div class="container">
+  <h1 id="title" style="color: #333;">Virtual DOM Demo</h1>
+  <p class="description">This is a sample paragraph.</p>
+  <ul class="item-list">
+    <li class="item" data-key="1">Item 1</li>
+    <li class="item active" data-key="2">Item 2</li>
+    <li class="item" data-key="3">Item 3</li>
+  </ul>
+  <div class="card">
+    <h2>Card Title</h2>
+    <p>Card content goes here.</p>
+    <button class="btn primary">Click Me</button>
+  </div>
+  <footer>
+    <span class="copyright">© 2025</span>
+  </footer>
+</div>`;
+
+function init() {
+  const editor  = document.getElementById('html-editor');
+  const realDom = document.getElementById('real-dom-area');
+
+  // 1. 편집기에 초기 HTML 삽입
+  editor.value = INITIAL_HTML;
+
+  // 2. 실제 DOM 영역 렌더링
+  const parsed = parseHTML(INITIAL_HTML);
+  if (!parsed) { showError('초기 HTML 파싱 실패'); return; }
+  realDom.appendChild(parsed.cloneNode(true));
+
+  // 3. VNode 변환 → 히스토리 저장
+  const initVNode = domToVNode(realDom.firstElementChild);
+  history.push(initVNode);
+
+  // 4. 트리 시각화 초기화
+  renderVTree(initVNode, new Set(), document.getElementById('vtree-old'));
+  renderVTree(initVNode, new Set(), document.getElementById('vtree-new'));
+
+  // 5. 미리보기
+  updatePreview();
+
+  // ── 이벤트 ──
+
+  // 편집기 입력 → 실시간 미리보기
+  editor.addEventListener('input', updatePreview);
+
+  // ▶ Patch 적용
+  document.getElementById('btn-patch').addEventListener('click', () => {
+    const html = editor.value.trim();
+    if (!html) { showError('HTML을 입력해주세요.'); return; }
+
+    const parsed = parseHTML(html);
+    if (!parsed) { showError('유효하지 않은 HTML입니다. 태그 구조를 확인해주세요.'); return; }
+
+    const oldVNode = history.getCurrent();
+    if (!oldVNode) return;
+
+    const newVNode = domToVNode(parsed);
+
+    // Diff 계산
+    const patches = diff(oldVNode, newVNode);
+
+    // Diff 로그 렌더링
+    renderDiffLog(patches);
+
+    // 변경 인덱스 수집 (트리 하이라이트용)
+    const changedIdx = new Set(patches.map(p => p.index));
+
+    // Patch 적용
+    if (patches.length > 0) {
+      const rootEl = realDom.firstElementChild;
+      if (rootEl) {
+        patch(rootEl, patches);
+      } else {
+        // 루트가 없으면 완전 재빌드
+        realDom.innerHTML = '';
+        realDom.appendChild(vnodeToDOM(newVNode));
+      }
+    }
+
+    // VTree 업데이트 (변경 노드 하이라이트)
+    renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
+    renderVTree(newVNode, changedIdx,  document.getElementById('vtree-new'));
+
+    // 히스토리 저장
+    history.push(newVNode);
+  });
+
+  // ◀ 뒤로가기
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    const vnode = history.undo();
+    if (vnode) applyState(vnode);
+  });
+
+  // 앞으로가기 ▶
+  document.getElementById('btn-redo').addEventListener('click', () => {
+    const vnode = history.redo();
+    if (vnode) applyState(vnode);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
