@@ -382,3 +382,163 @@ virtual-dom-diff/
 <p align="center">
   Made with Vanilla JS — no frameworks, no dependencies.
 </p>
+
+---
+
+## White-box Scenario Diagrams
+
+The `Weekly Travel Journal.html` demo uses four presentation scenarios.
+Each scenario is documented with:
+
+- input
+- internal branch
+- render result
+- code point to inspect
+
+### Scenario 1: Monday -> Tuesday uses patch
+
+```mermaid
+flowchart TD
+    A["Scenario 1 button"] --> B["resetDemoState(activeDay=Monday)"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["setActiveDay('Tuesday')"]
+    E --> F["saveCurrentSnapshot()"]
+    F --> G["render()"]
+    G --> H["nextTree = renderApp()"]
+    H --> I["decideRenderStrategy()"]
+    I --> J["useFullReload = false"]
+    J --> K["patchNode(...)"]
+    K --> L["buildWhiteboxInspection(...)"]
+    L --> M["Panel shows Virtual DOM Patch"]
+```
+
+```js
+function setActiveDay(day) {
+  if (state.activeDay === day) return;
+  saveCurrentSnapshot();
+  state.activeDay = day;
+  render();
+}
+```
+
+Check values:
+
+- `state.activeDay === "Tuesday"`
+- `decision.useFullReload === false`
+- `renderMode === "Virtual DOM Patch"`
+
+### Scenario 2: Entering Thursday 10,000 mode uses full reload
+
+```mermaid
+flowchart TD
+    A["Scenario 2 button"] --> B["resetDemoState(activeDay=Thursday, massive=false)"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["toggleThursdayMassiveMode()"]
+    E --> F["state.thursdayMassiveMode = true"]
+    F --> G["saveCurrentSnapshot()"]
+    G --> H["render()"]
+    H --> I["nextTree = renderApp()"]
+    I --> J["decideRenderStrategy()"]
+    J --> K["useFullReload = true"]
+    K --> L["appHost.innerHTML = ''"]
+    L --> M["createDomNode(nextTree, stats)"]
+    M --> N["Panel shows 전체 DOM 교체"]
+```
+
+```js
+if (!isCurrentMassive && isNextMassive) {
+  return {
+    useFullReload: true,
+    reason: "목요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다.",
+    nextProfile
+  };
+}
+```
+
+Check values:
+
+- `state.thursdayMassiveMode === true`
+- `decision.nextProfile === "thursday-massive"`
+- `decision.useFullReload === true`
+
+### Scenario 3: Thursday massive -> Friday massive uses keyed patch
+
+```mermaid
+flowchart TD
+    A["Scenario 3 button"] --> B["resetDemoState(Thursday massive, Friday massive)"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["setActiveDay('Friday')"]
+    E --> F["saveCurrentSnapshot()"]
+    F --> G["render()"]
+    G --> H["nextTree = renderApp()"]
+    H --> I["decideRenderStrategy()"]
+    I --> J["useFullReload = false"]
+    J --> K["patchNode(...)"]
+    K --> L["patchChildren(parent, oldChildren, newChildren)"]
+    L --> M["childrenHaveKeys()"]
+    M --> N["hasStableKeyOrder()"]
+    N --> O["key-aware patch path"]
+    O --> P["Panel shows Keyed Patch"]
+```
+
+```js
+function patchChildren(parent, oldChildren, newChildren, stats) {
+  const useKeyedDiff = childrenHaveKeys(oldChildren) || childrenHaveKeys(newChildren);
+
+  if (!useKeyedDiff) {
+    const maxLength = Math.max(oldChildren.length, newChildren.length);
+    for (let index = 0; index < maxLength; index += 1) {
+      patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+    }
+    return;
+  }
+
+  if (hasStableKeyOrder(oldChildren, newChildren)) {
+    for (let index = 0; index < newChildren.length; index += 1) {
+      patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+    }
+    return;
+  }
+
+  const oldMap = new Map();
+  const usedKeys = new Set();
+  const desiredDomOrder = [];
+
+  oldChildren.forEach((child, index) => {
+    const key = getNodeKey(child, index);
+    oldMap.set(key, { node: child, domNode: oldDomChildren[index] });
+  });
+
+  newChildren.forEach((newChild, index) => {
+    const key = getNodeKey(newChild, index);
+    if (oldMap.has(key)) {
+      const matched = oldMap.get(key);
+      const patchedDom = patchNode(parent, matched.domNode, matched.node, newChild, stats);
+      desiredDomOrder.push(patchedDom);
+      usedKeys.add(key);
+      return;
+    }
+
+    desiredDomOrder.push(createDomNode(newChild, stats));
+  });
+
+  desiredDomOrder.forEach((domNode, index) => {
+    const currentNode = currentComparableChildren[index];
+    if (currentNode !== domNode) {
+      parent.insertBefore(domNode, currentNode || null);
+    }
+  });
+}
+```
+
+Check values:
+
+- `state.activeDay === "Friday"`
+- `decision.nextProfile === "friday-massive"`
+- `decision.useFullReload === false`
+- keyed diff path is used
+- if key order changes, matching nodes are found again with `oldMap`
+- DOM order is corrected with `insertBefore(...)`
