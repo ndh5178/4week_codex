@@ -1154,15 +1154,13 @@ function showError(msg) {
  * @param {VNode} vnode
  */
 function applyState(vnode) {
-  // 편집기 동기화
+  // 편집기 동기화 → updatePreview가 iframe + live preview 모두 업데이트
   const bodyHTML = vnodeToHTML(vnode);
   document.getElementById('html-editor').value = bodyHTML;
   updatePreview();
 
-  // iframe 업데이트
-  const fullDoc = buildFullDocument(bodyHTML);
-  updateIframe(fullDoc);
-  broadcastToTabs(fullDoc);
+  // 새 탭 broadcast (iframe은 updatePreview에서 이미 처리됨)
+  broadcastToTabs(buildFullDocument(bodyHTML));
 
   // 트리 초기화 (변경 없음)
   renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
@@ -1221,10 +1219,40 @@ const FILE_TEMPLATES = [
   { name: 'Built-in Demo', path: null },
   { name: 'html1.html', path: 'html1.html' },
   { name: 'html2.html', path: 'html2.html' },
+  { name: 'test.html', path: 'test.html' },
 ];
 
 const openedTabs = [];
 let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
+let currentBodySuffix = '';
+
+function extractBodySuffix(bodyHTML) {
+  const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
+  const firstEl = doc.body.firstElementChild;
+  if (!firstEl) return '';
+  const parts = [];
+  let node = firstEl.nextSibling;
+  while (node) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      if (node.tagName === 'SCRIPT') {
+        const attrs = Array.from(node.attributes).map(a => ' ' + a.name + '="' + a.value + '"').join('');
+        parts.push('<script' + attrs + '>' + node.textContent + '<\/script>');
+      } else {
+        parts.push(node.outerHTML);
+      }
+    } else if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+      parts.push(node.textContent);
+    }
+    node = node.nextSibling;
+  }
+  return parts.join('\n');
+}
+
+function stripBodySuffix(bodyHTML) {
+  const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
+  const firstEl = doc.body.firstElementChild;
+  return firstEl ? firstEl.outerHTML : bodyHTML;
+}
 
 function extractBodyContent(fullHTML) {
   const match = fullHTML.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
@@ -1237,7 +1265,10 @@ function extractHead(fullHTML) {
 }
 
 function buildFullDocument(bodyHTML) {
-  return `<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8">${currentDocHead}</head>\n<body>${bodyHTML}</body>\n</html>`;
+  const suffix = currentBodySuffix ? '\n' + currentBodySuffix : '';
+  const base = window.location.origin + '/';
+  const charsetTag = currentDocHead.toLowerCase().includes('charset') ? '' : '<meta charset="UTF-8">';
+  return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
 function toFullDoc(htmlContent) {
@@ -1270,6 +1301,7 @@ function broadcastToTabs(fullDoc) {
 async function loadFile(path) {
   if (!path) {
     currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
+    currentBodySuffix = '';
     resetApp(INITIAL_HTML, false);
     return;
   }
@@ -1290,6 +1322,10 @@ function resetApp(content, isFullDoc) {
     if (head) currentDocHead = head;
     bodyHTML = extractBodyContent(content);
   }
+
+  // body의 script/부가 요소 분리 보존
+  currentBodySuffix = extractBodySuffix(bodyHTML);
+  bodyHTML = stripBodySuffix(bodyHTML);
 
   const editor = document.getElementById('html-editor');
   editor.value = bodyHTML;
@@ -1361,11 +1397,11 @@ function init() {
     // 변경 인덱스 수집 (트리 하이라이트용)
     const changedIdx = new Set(patches.map(p => p.index));
 
-    // iframe + 새 탭 업데이트
+    // editor 동기화 → iframe + live preview + 새 탭 업데이트
     const bodyHTML = vnodeToHTML(newVNode);
-    const fullDoc = buildFullDocument(bodyHTML);
-    updateIframe(fullDoc);
-    broadcastToTabs(fullDoc);
+    editor.value = bodyHTML;
+    updatePreview();
+    broadcastToTabs(buildFullDocument(bodyHTML));
 
     // VTree 업데이트 (변경 노드 하이라이트)
     renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
