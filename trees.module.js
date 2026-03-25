@@ -376,10 +376,6 @@
       return 'Unknown';
     }
 
-    if (vnode.type === 'text') {
-      return `"${shorten(vnode.text || '')}"`;
-    }
-
     return vnode.tagName.toUpperCase();
   }
 
@@ -398,6 +394,10 @@
   // SVG 배치 계산은 중첩 객체보다 평면 리스트가 다루기 쉬워서, DFS 순회 결과를 layout-friendly 구조로 다시 만듭니다.
   function flattenTree(vnode, depth = 0, bucket = [], indexRef = { value: 0 }, parentIndex = null, path = 'root') {
     if (!vnode) {
+      return bucket;
+    }
+
+    if (vnode.type === 'text') {
       return bucket;
     }
 
@@ -424,6 +424,10 @@
   // 평면 트리를 SVG 좌표가 있는 시각 노드/엣지 구조로 바꾸는 함수입니다.
   // 트리 깊이와 같은 레벨 안의 순서를 좌표로 치환해, 입력 VNode가 달라져도 기본 구조는 자동 배치되게 합니다.
   function buildLayout(flatNodes, changedIndexes) {
+    const canvasWidth = 1000;
+    const canvasHeight = 620;
+    const horizontalPadding = 110;
+    const verticalPadding = 88;
     const byDepth = new Map();
     flatNodes.forEach((item) => {
       if (!byDepth.has(item.depth)) {
@@ -436,20 +440,24 @@
     const nodes = flatNodes.map((item) => {
       const siblings = byDepth.get(item.depth) || [item];
       const siblingIndex = siblings.findIndex((candidate) => candidate.index === item.index);
-      const xStep = 100 / (siblings.length + 1);
-      const yStep = 70 / (maxDepth + 1 || 1);
-      const x = xStep * (siblingIndex + 1);
-      const y = 12 + (item.depth * yStep);
+      const usableWidth = canvasWidth - (horizontalPadding * 2);
+      const usableHeight = canvasHeight - (verticalPadding * 2);
+      const x = siblings.length === 1
+        ? canvasWidth / 2
+        : horizontalPadding + ((usableWidth / (siblings.length - 1)) * siblingIndex);
+      const y = verticalPadding + ((usableHeight / (maxDepth + 1 || 1)) * item.depth);
       const isChanged = changedIndexes.has(item.index);
       const variant = item.depth === 0 ? 'root' : isChanged ? 'accent' : item.depth % 2 === 0 ? 'secondary' : '';
+      const label = getNodeLabel(item.vnode);
+      const width = Math.min(Math.max(label.length * 10, 110), 170);
 
       return {
         id: item.index,
         x,
         y,
-        label: getNodeLabel(item.vnode),
+        label,
         variant,
-        width: Math.min(Math.max(getNodeLabel(item.vnode).length * 9, 88), 150),
+        width,
         path: item.path,
         parentIndex: item.parentIndex,
         vnode: item.vnode,
@@ -463,11 +471,11 @@
         const parent = nodes.find((candidate) => candidate.id === node.parentIndex);
         return {
           x1: parent.x,
-          y1: parent.y + 3,
+          y1: parent.y + 20,
           x2: node.x,
-          y2: node.y - 3,
-          stroke: node.isChanged ? '#a7c8ff' : '#495369',
-          width: node.isChanged ? 2 : 1.5
+          y2: node.y - 20,
+          stroke: node.isChanged ? '#ffffff' : 'rgba(255, 255, 255, 0.88)',
+          width: node.isChanged ? 2.4 : 1.9
         };
       });
 
@@ -813,10 +821,15 @@
         font-weight: 700;
         letter-spacing: 0.02em;
         height: 42px;
-        width: 118px;
+        width: 100%;
+        padding: 0 12px;
+        box-sizing: border-box;
         border: 1px solid rgba(30, 45, 69, 0.9);
         background: rgba(17, 24, 39, 0.86);
         color: var(--text-primary, #e8f0fe);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .trees-module__node-label--root {
         color: var(--cyan, #0ff5ce);
@@ -857,15 +870,13 @@
     const model = inputOrOptions.nodes ? inputOrOptions : createModel(inputOrOptions);
 
     const edgeMarkup = model.edges.map((edge) => `
-      <line class="trees-module__svg-line" x1="${edge.x1}%" y1="${edge.y1}%" x2="${edge.x2}%" y2="${edge.y2}%" stroke="${edge.stroke}" stroke-width="${edge.width}"></line>
+      <line class="trees-module__svg-line" x1="${edge.x1}" y1="${edge.y1}" x2="${edge.x2}" y2="${edge.y2}" stroke="${edge.stroke}" stroke-width="${edge.width}"></line>
     `).join('');
 
     const nodeMarkup = model.nodes.map((node) => `
-      <g transform="translate(-59,-21)">
-        <foreignObject width="${node.width || 118}" height="44" x="${node.x}%" y="${node.y}%">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="${getNodeClass(node.variant)}" title="${escapeHtml(node.path)}">${escapeHtml(node.label)}</div>
-        </foreignObject>
-      </g>
+      <foreignObject width="${node.width || 118}" height="44" x="${node.x - ((node.width || 118) / 2)}" y="${node.y - 22}">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="${getNodeClass(node.variant)}" title="${escapeHtml(node.path)}">${escapeHtml(node.label)}</div>
+      </foreignObject>
     `).join('');
 
     const summaryCards = model.summaryCards.map((card) => `
