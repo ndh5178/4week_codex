@@ -400,14 +400,17 @@ Each scenario is documented with:
 ```mermaid
 flowchart TD
     A["Scenario 1 button"] --> B["resetDemoState(activeDay=Monday)"]
-    B --> C["setActiveDay('Tuesday')"]
-    C --> D["saveCurrentSnapshot()"]
-    D --> E["render()"]
-    E --> F["decideRenderStrategy()"]
-    F --> G["useFullReload = false"]
-    G --> H["patchNode(...)"]
-    H --> I["buildWhiteboxInspection(...)"]
-    I --> J["Panel shows Virtual DOM Patch"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["setActiveDay('Tuesday')"]
+    E --> F["saveCurrentSnapshot()"]
+    F --> G["render()"]
+    G --> H["nextTree = renderApp()"]
+    H --> I["decideRenderStrategy()"]
+    I --> J["useFullReload = false"]
+    J --> K["patchNode(...)"]
+    K --> L["buildWhiteboxInspection(...)"]
+    L --> M["Panel shows Virtual DOM Patch"]
 ```
 
 ```js
@@ -430,14 +433,18 @@ Check values:
 ```mermaid
 flowchart TD
     A["Scenario 2 button"] --> B["resetDemoState(activeDay=Thursday, massive=false)"]
-    B --> C["toggleThursdayMassiveMode()"]
-    C --> D["state.thursdayMassiveMode = true"]
-    D --> E["render()"]
-    E --> F["decideRenderStrategy()"]
-    F --> G["useFullReload = true"]
-    G --> H["appHost.innerHTML = ''"]
-    H --> I["createDomNode(nextTree, stats)"]
-    I --> J["Panel shows 전체 DOM 교체"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["toggleThursdayMassiveMode()"]
+    E --> F["state.thursdayMassiveMode = true"]
+    F --> G["saveCurrentSnapshot()"]
+    G --> H["render()"]
+    H --> I["nextTree = renderApp()"]
+    I --> J["decideRenderStrategy()"]
+    J --> K["useFullReload = true"]
+    K --> L["appHost.innerHTML = ''"]
+    L --> M["createDomNode(nextTree, stats)"]
+    M --> N["Panel shows 전체 DOM 교체"]
 ```
 
 ```js
@@ -461,21 +468,33 @@ Check values:
 ```mermaid
 flowchart TD
     A["Scenario 3 button"] --> B["resetDemoState(Thursday massive, Friday massive)"]
-    B --> C["setActiveDay('Friday')"]
-    C --> D["render()"]
-    D --> E["decideRenderStrategy()"]
-    E --> F["useFullReload = false"]
-    F --> G["patchNode(...)"]
-    G --> H["patchChildren(parent, oldChildren, newChildren)"]
-    H --> I["childrenHaveKeys()"]
-    I --> J["hasStableKeyOrder()"]
-    J --> K["key-based patch path"]
-    K --> L["Panel shows Keyed Patch"]
+    B --> C["buildDefaultAppTree()"]
+    C --> D["createDomNode(resetTree)"]
+    D --> E["setActiveDay('Friday')"]
+    E --> F["saveCurrentSnapshot()"]
+    F --> G["render()"]
+    G --> H["nextTree = renderApp()"]
+    H --> I["decideRenderStrategy()"]
+    I --> J["useFullReload = false"]
+    J --> K["patchNode(...)"]
+    K --> L["patchChildren(parent, oldChildren, newChildren)"]
+    L --> M["childrenHaveKeys()"]
+    M --> N["hasStableKeyOrder()"]
+    N --> O["key-aware patch path"]
+    O --> P["Panel shows Keyed Patch"]
 ```
 
 ```js
 function patchChildren(parent, oldChildren, newChildren, stats) {
   const useKeyedDiff = childrenHaveKeys(oldChildren) || childrenHaveKeys(newChildren);
+
+  if (!useKeyedDiff) {
+    const maxLength = Math.max(oldChildren.length, newChildren.length);
+    for (let index = 0; index < maxLength; index += 1) {
+      patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+    }
+    return;
+  }
 
   if (hasStableKeyOrder(oldChildren, newChildren)) {
     for (let index = 0; index < newChildren.length; index += 1) {
@@ -483,6 +502,11 @@ function patchChildren(parent, oldChildren, newChildren, stats) {
     }
     return;
   }
+
+  const oldMap = new Map();
+  oldChildren.forEach((child, index) => {
+    oldMap.set(getNodeKey(child, index), { node: child, domNode: oldDomChildren[index] });
+  });
 }
 ```
 
