@@ -471,6 +471,8 @@
       <h1>🌳 Virtual DOM &amp; Diff Algorithm</h1>
       <span class="badge">Vanilla JS</span>
       <select id="file-selector"></select>
+      <button class="btn" id="btn-pick-folder" type="button">폴더에서 HTML 찾기</button>
+      <input id="folder-input" type="file" webkitdirectory directory multiple accept=".html,.htm" hidden />
     </div>
     <span class="meta">React의 핵심을 밑바닥부터 구현합니다.</span>
   </header>
@@ -1215,16 +1217,17 @@ const INITIAL_HTML = `<div class="container">
 </div>`;
 
 /* ── File templates & tab management ── */
-const FILE_TEMPLATES = [
-  { name: 'Built-in Demo', path: null },
-  { name: 'html1.html', path: 'html1.html' },
-  { name: 'html2.html', path: 'html2.html' },
-  { name: 'test.html', path: 'test.html' },
+const DEFAULT_FILE_TEMPLATES = [
+  { id: 'builtin-demo', name: 'Built-in Demo', path: null, type: 'builtin' },
+  { id: 'file-html1', name: 'html1.html', path: 'html1.html', type: 'path' },
+  { id: 'file-html2', name: 'html2.html', path: 'html2.html', type: 'path' },
+  { id: 'file-test', name: 'test.html', path: 'test.html', type: 'path' },
 ];
 
 const openedTabs = [];
 let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
 let currentBodySuffix = '';
+const fileRegistry = new Map();
 
 function extractBodySuffix(bodyHTML) {
   const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
@@ -1299,18 +1302,73 @@ function broadcastToTabs(fullDoc) {
   }
 }
 
-async function loadFile(path) {
-  if (!path) {
+function isFullDocumentContent(htmlContent) {
+  return /^\s*<!DOCTYPE|^\s*<html/i.test(htmlContent);
+}
+
+function rebuildFileSelector(selectedId = null) {
+  const selector = document.getElementById('file-selector');
+  selector.innerHTML = '';
+
+  for (const entry of fileRegistry.values()) {
+    const opt = document.createElement('option');
+    opt.textContent = entry.name;
+    opt.value = entry.id;
+    selector.appendChild(opt);
+  }
+
+  if (selectedId && fileRegistry.has(selectedId)) {
+    selector.value = selectedId;
+  } else if (selector.options.length > 0) {
+    selector.selectedIndex = 0;
+  }
+}
+
+function registerDefaultTemplates() {
+  fileRegistry.clear();
+  for (const tmpl of DEFAULT_FILE_TEMPLATES) {
+    fileRegistry.set(tmpl.id, tmpl);
+  }
+}
+
+function registerFolderFiles(fileList) {
+  const htmlFiles = Array.from(fileList)
+    .filter(file => /\.html?$/i.test(file.name))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+  for (const file of htmlFiles) {
+    const id = `picked-${file.name}`;
+    fileRegistry.set(id, {
+      id,
+      name: file.name,
+      file,
+      type: 'picked'
+    });
+  }
+
+  return htmlFiles;
+}
+
+async function loadFile(fileId) {
+  const entry = fileRegistry.get(fileId);
+  if (!entry || entry.type === 'builtin') {
     currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
     currentBodySuffix = '';
     resetApp(INITIAL_HTML, false);
     return;
   }
+
   try {
-    const resp = await fetch(path);
+    if (entry.type === 'picked') {
+      const text = await entry.file.text();
+      resetApp(text, isFullDocumentContent(text));
+      return;
+    }
+
+    const resp = await fetch(entry.path);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
-    resetApp(text, true);
+    resetApp(text, isFullDocumentContent(text));
   } catch (e) {
     showError(`파일 로드 실패: ${e.message}`);
   }
@@ -1354,22 +1412,36 @@ function resetApp(content, isFullDoc) {
 
 function init() {
   const editor = document.getElementById('html-editor');
+  const selector = document.getElementById('file-selector');
+  const folderInput = document.getElementById('folder-input');
 
   // ── 파일 셀렉터 초기화 ──
-  const selector = document.getElementById('file-selector');
-  for (const tmpl of FILE_TEMPLATES) {
-    const opt = document.createElement('option');
-    opt.textContent = tmpl.name;
-    opt.value = tmpl.path || '';
-    selector.appendChild(opt);
-  }
+  registerDefaultTemplates();
+  rebuildFileSelector('builtin-demo');
   selector.addEventListener('change', () => {
-    const path = selector.value || null;
-    loadFile(path);
+    loadFile(selector.value);
+  });
+
+  document.getElementById('btn-pick-folder').addEventListener('click', () => {
+    folderInput.click();
+  });
+
+  folderInput.addEventListener('change', () => {
+    const htmlFiles = registerFolderFiles(folderInput.files);
+
+    if (htmlFiles.length === 0) {
+      rebuildFileSelector('builtin-demo');
+      showError('선택한 폴더에서 HTML 파일을 찾지 못했습니다.');
+      return;
+    }
+
+    const firstPickedId = `picked-${htmlFiles[0].name}`;
+    rebuildFileSelector(firstPickedId);
+    loadFile(firstPickedId);
   });
 
   // ── 초기 상태 로드 (Built-in Demo) ──
-  resetApp(INITIAL_HTML, false);
+  loadFile('builtin-demo');
 
   // ── 이벤트 ──
 
