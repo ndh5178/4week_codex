@@ -482,35 +482,23 @@
           nextProfile
         };
       }
-      if (state.thursdayMassiveMode && state.activeDay === "Thursday" && !state.hasMountedMassiveThursday) {
+
+      if (state.lastRenderedProfile !== "normal" || nextProfile !== "normal") {
         return {
           useFullReload: true,
-          reason: "목요일 10,000개 데이터가 처음 등장해서 한 번 전체 DOM 교체를 선택했습니다.",
-          nextProfile
-        };
-      }
-      if (state.fridayMassiveMode && state.activeDay === "Friday" && !state.hasMountedMassiveFriday) {
-        return {
-          useFullReload: true,
-          reason: "금요일 10,000개 데이터가 처음 등장해서 한 번 전체 DOM 교체를 선택했습니다.",
-          nextProfile
-        };
-      }
-      if (state.lastRenderedProfile !== "normal" && nextProfile === "normal") {
-        return {
-          useFullReload: true,
-          reason: "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 한 번 전체 DOM 교체로 안정적으로 정리했습니다.",
+          reason:
+            nextProfile === "thursday-massive"
+              ? "목요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+              : nextProfile === "friday-massive"
+                ? "금요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+                : "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 전체 DOM 교체를 선택했습니다.",
           nextProfile
         };
       }
       return {
         useFullReload: false,
         nextProfile,
-        reason: state.thursdayMassiveMode && state.activeDay === "Thursday"
-          ? "목요일 큰 리스트는 key + Map 기반 비교로 Patch 합니다."
-          : state.fridayMassiveMode && state.activeDay === "Friday"
-            ? "금요일 큰 리스트는 key + Map 기반 비교로 Patch 합니다."
-            : "기본 구조 비교이므로 Virtual DOM Patch를 사용합니다."
+        reason: "기본 구조 비교이므로 Virtual DOM Patch를 사용합니다."
       };
     }
 
