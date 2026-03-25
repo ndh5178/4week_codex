@@ -524,6 +524,15 @@
     </div>
   </div>
 
+  <!-- ── Tab Log Panel ── -->
+  <div class="panel" id="tab-log-wrap" style="margin-top:0; display:none;">
+    <div class="panel-header">
+      <span class="dot" style="background:#f0c040;"></span>탭 로그
+      <button id="btn-clear-log" style="margin-left:auto; font-size:11px; padding:2px 8px; cursor:pointer;">지우기</button>
+    </div>
+    <div id="tab-log-list" style="font-size:12px; padding:8px; max-height:220px; overflow-y:auto; font-family:monospace;"></div>
+  </div>
+
 </div>
 <div id="error-toast"></div>
 
@@ -918,6 +927,15 @@ const history = {
     return this.cursor >= 0 ? deepCopy(this.states[this.cursor]) : null;
   },
 
+  replaceCurrent(vnode) {
+    if (this.cursor < 0) {
+      this.push(vnode);
+      return;
+    }
+    this.states[this.cursor] = deepCopy(vnode);
+    this._sync();
+  },
+
   canUndo() { return this.cursor > 0; },
   canRedo() { return this.cursor < this.states.length - 1; },
 
@@ -1158,8 +1176,8 @@ function showError(msg) {
 function applyState(vnode) {
   // 편집기 동기화 → updatePreview가 iframe + live preview 모두 업데이트
   const bodyHTML = vnodeToHTML(vnode);
-  document.getElementById('html-editor').value = bodyHTML;
-  updatePreview();
+  setPreviewFromBodyHTML(bodyHTML);
+  updateIframe(toFullDoc(bodyHTML));
 
   // 새 탭 broadcast (iframe은 updatePreview에서 이미 처리됨)
   broadcastToTabs(buildFullDocument(bodyHTML));
@@ -1228,6 +1246,9 @@ const openedTabs = [];
 let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
 let currentBodySuffix = '';
 const fileRegistry = new Map();
+let iframeObserver = null;
+let iframeSyncTimer = null;
+let iframeSyncMuted = false;
 
 function extractBodySuffix(bodyHTML) {
   const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
@@ -1274,6 +1295,93 @@ function buildFullDocument(bodyHTML) {
   return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
+function setPreviewFromBodyHTML(bodyHTML) {
+  const editor = document.getElementById('html-editor');
+  const preview = document.getElementById('html-preview');
+  const parsed = parseHTML(bodyHTML);
+
+  editor.value = bodyHTML;
+  preview.innerHTML = '';
+
+  if (!parsed) {
+    if (bodyHTML.trim()) {
+      preview.textContent = '유효하지 않은 HTML';
+      preview.style.color = 'var(--red)';
+    }
+    return;
+  }
+
+  preview.appendChild(parsed.cloneNode(true));
+  preview.style.color = '';
+}
+
+function handleIframeLoad() {
+  attachIframeObserver();
+  syncFromIframe(false);
+}
+
+function syncFromIframe(pushToHistory = false) {
+  const iframe = document.getElementById('real-dom-iframe');
+  const doc = iframe?.contentDocument;
+  const root = doc?.body?.firstElementChild;
+
+  if (!root) return;
+
+  const bodyHTML = root.outerHTML;
+  const parsed = parseHTML(bodyHTML);
+  if (!parsed) return;
+
+  const vnode = domToVNode(parsed);
+  const currentVNode = history.getCurrent();
+  const currentHTML = currentVNode ? vnodeToHTML(currentVNode) : '';
+
+  if (currentHTML === bodyHTML) return;
+
+  setPreviewFromBodyHTML(bodyHTML);
+  renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
+  renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+  document.getElementById('diff-log').innerHTML =
+    '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태에 동기화했습니다.</div>';
+
+  if (pushToHistory) {
+    history.push(vnode);
+  } else {
+    history.replaceCurrent(vnode);
+  }
+}
+
+function scheduleIframeSync(pushToHistory = true) {
+  clearTimeout(iframeSyncTimer);
+  iframeSyncTimer = setTimeout(() => {
+    syncFromIframe(pushToHistory);
+  }, 120);
+}
+
+function attachIframeObserver() {
+  const iframe = document.getElementById('real-dom-iframe');
+  const doc = iframe?.contentDocument;
+  const target = doc?.body;
+
+  if (iframeObserver) {
+    iframeObserver.disconnect();
+    iframeObserver = null;
+  }
+
+  if (!target) return;
+
+  iframeObserver = new MutationObserver(() => {
+    if (iframeSyncMuted) return;
+    scheduleIframeSync(true);
+  });
+
+  iframeObserver.observe(target, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true
+  });
+}
+
 function toFullDoc(htmlContent) {
   return /^\s*<!DOCTYPE|^\s*<html/i.test(htmlContent)
     ? htmlContent
@@ -1282,7 +1390,11 @@ function toFullDoc(htmlContent) {
 
 function updateIframe(fullDoc) {
   const iframe = document.getElementById('real-dom-iframe');
+  iframeSyncMuted = true;
   iframe.srcdoc = fullDoc;
+  setTimeout(() => {
+    iframeSyncMuted = false;
+  }, 300);
 }
 
 function broadcastToTabs(fullDoc) {
@@ -1414,6 +1526,9 @@ function init() {
   const editor = document.getElementById('html-editor');
   const selector = document.getElementById('file-selector');
   const folderInput = document.getElementById('folder-input');
+  const iframe = document.getElementById('real-dom-iframe');
+
+  iframe.addEventListener('load', handleIframeLoad);
 
   // ── 파일 셀렉터 초기화 ──
   registerDefaultTemplates();
@@ -1511,6 +1626,40 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ── 탭 로그 수신 ──
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'vdom-log') return;
+  const { oldTree, newTree, operations } = e.data;
+  const wrap = document.getElementById('tab-log-wrap');
+  const list = document.getElementById('tab-log-list');
+  wrap.style.display = '';
+  list.innerHTML = '';
+
+  const side = (label, data) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'flex:1; min-width:0;';
+    el.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">${label}</div>`
+      + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto;">${JSON.stringify(data, null, 2)}</pre>`;
+    return el;
+  };
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px;';
+  row.appendChild(side('Old Tree', oldTree));
+  row.appendChild(side('New Tree', newTree));
+  list.appendChild(row);
+
+  const opsEl = document.createElement('div');
+  opsEl.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">Operations Array</div>`
+    + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto;">${JSON.stringify(operations, null, 2)}</pre>`;
+  list.appendChild(opsEl);
+});
+
+document.getElementById('btn-clear-log').addEventListener('click', () => {
+  document.getElementById('tab-log-list').innerHTML = '';
+  document.getElementById('tab-log-wrap').style.display = 'none';
+});
 </script>
 </body>
 </html>
