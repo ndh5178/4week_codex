@@ -1289,9 +1289,10 @@ function broadcastToTabs(fullDoc) {
       continue;
     }
     try {
-      openedTabs[i].document.open();
-      openedTabs[i].document.write(fullDoc);
-      openedTabs[i].document.close();
+      const blob = new Blob([fullDoc], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      openedTabs[i].location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
     } catch (_) {
       openedTabs.splice(i, 1);
     }
@@ -1417,12 +1418,11 @@ function init() {
     if (!currentVNode) return;
     const bodyHTML = vnodeToHTML(currentVNode);
     const fullDoc = buildFullDocument(bodyHTML);
-    const tab = window.open('', '_blank');
-    if (tab) {
-      tab.document.write(fullDoc);
-      tab.document.close();
-      openedTabs.push(tab);
-    }
+    const blob = new Blob([fullDoc], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const tab = window.open(url, '_blank');
+    if (tab) { openedTabs.push(tab); }
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   });
 
   // ◀ 뒤로가기
