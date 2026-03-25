@@ -122,7 +122,9 @@
           <div class="flex flex-wrap items-center justify-center gap-3">
             <button type="button" data-thursday-massive-toggle="true" data-key="toggle-thursday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">목요일 10,000개 데이터 켜기</button>
             <button type="button" data-friday-massive-toggle="true" data-key="toggle-friday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">금요일 10,000개 데이터 켜기</button>
+            <button type="button" data-debug-toggle="true" data-key="toggle-debug" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">디버깅 모드 켜기</button>
           </div>
+          <p class="text-xs text-accent/80 text-center leading-relaxed" data-debug-status="true">디버깅 모드가 꺼져 있어 개발용 로그를 숨기고 있습니다.</p>
         </section>
 
         <main class="grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]" data-key="main">
@@ -178,6 +180,7 @@
       activeDay: "Monday",
       thursdayMassiveMode: false,
       fridayMassiveMode: false,
+      debugModeEnabled: false,
       hasMountedMassiveThursday: false,
       hasMountedMassiveFriday: false,
       lastRenderedProfile: "normal",
@@ -251,6 +254,43 @@
       );
     }
 
+    function getDebugButtonLabel() {
+      return state.debugModeEnabled ? "디버깅 모드 켜짐" : "디버깅 모드 켜기";
+    }
+
+    function getDebugButtonClass() {
+      return `rounded-full border px-5 py-2 text-sm font-medium ${state.debugModeEnabled ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`;
+    }
+
+    function getDebugStatusText() {
+      return state.debugModeEnabled
+        ? "디버깅 모드가 활성화되어 콘솔과 VDOM 추적 로그를 출력합니다."
+        : "디버깅 모드가 꺼져 있어 개발용 로그를 숨기고 있습니다.";
+    }
+
+    function buildControlRow() {
+      return h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
+        h("button", {
+          type: "button",
+          key: "toggle-thursday",
+          "data-thursday-massive-toggle": "true",
+          className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+        }, state.thursdayMassiveMode ? "목요일 10,000개 데이터 끄기" : "목요일 10,000개 데이터 켜기"),
+        h("button", {
+          type: "button",
+          key: "toggle-friday",
+          "data-friday-massive-toggle": "true",
+          className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+        }, state.fridayMassiveMode ? "금요일 10,000개 데이터 끄기" : "금요일 10,000개 데이터 켜기"),
+        h("button", {
+          type: "button",
+          key: "toggle-debug",
+          "data-debug-toggle": "true",
+          className: getDebugButtonClass()
+        }, getDebugButtonLabel())
+      );
+    }
+
     function syncDayButtons(navNode, activeDay) {
       const buttonRow = navNode?.children?.[0];
       if (!buttonRow || !buttonRow.children) return;
@@ -302,20 +342,8 @@
 
       const massivePanel = findNodeByKey(baseTree, "massive-panel");
       if (massivePanel) {
-        massivePanel.children[1] = h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
-          h("button", {
-            type: "button",
-            key: "toggle-thursday",
-            "data-thursday-massive-toggle": "true",
-            className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
-          }, state.thursdayMassiveMode ? "紐⑹슂??10,000媛??곗씠???꾧린" : "紐⑹슂??10,000媛??곗씠??耳쒓린"),
-          h("button", {
-            type: "button",
-            key: "toggle-friday",
-            "data-friday-massive-toggle": "true",
-            className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
-          }, state.fridayMassiveMode ? "湲덉슂??10,000媛??곗씠???꾧린" : "湲덉슂??10,000媛??곗씠??耳쒓린")
-        );
+        massivePanel.children[1] = buildControlRow();
+        massivePanel.children[2] = h("p", { className: "text-xs text-accent/80 text-center leading-relaxed", "data-debug-status": "true" }, getDebugStatusText());
       }
 
       const daytimeList = findNodeByKey(baseTree, "daytime-list");
@@ -364,6 +392,7 @@
     }
 
     function pushOperation(stats, type, detail) {
+      if (!state.debugModeEnabled) return;
       stats.operations.push({
         type,
         detail
@@ -376,22 +405,31 @@
       state.lastDomUpdates = domUpdates;
       state.lastReason = reason;
 
-      console.clear();
-      console.log("[여행 일정 VDOM 데모]");
-      console.log("선택한 요일:", day);
-      console.log("렌더링 방식:", mode);
-      console.log("DOM 변경 횟수:", domUpdates);
-      console.log("걸린 시간:", `${duration.toFixed(3)}ms`);
-      console.log("선택 이유:", reason);
+      if (state.debugModeEnabled) {
+        console.clear();
+        console.log("[여행 일정 VDOM 데모]");
+        console.log("선택한 요일:", day);
+        console.log("렌더링 방식:", mode);
+        console.log("DOM 변경 횟수:", domUpdates);
+        console.log("걸린 시간:", `${duration.toFixed(3)}ms`);
+        console.log("선택 이유:", reason);
+      }
 
       const modeInfo = document.querySelector("[data-render-info]");
       const reasonInfo = document.querySelector("[data-render-reason]");
       if (modeInfo) modeInfo.textContent = `${mode} | DOM 변경 ${domUpdates}회 | ${duration.toFixed(3)}ms`;
       if (reasonInfo) reasonInfo.textContent = reason;
+      updateDebugStatus();
 
     }
 
+    function updateDebugStatus() {
+      const debugStatus = document.querySelector("[data-debug-status]");
+      if (debugStatus) debugStatus.textContent = getDebugStatusText();
+    }
+
     function logVirtualDomTrees(oldTree, newTree, operations = []) {
+      if (!state.debugModeEnabled) return;
       console.group("Virtual DOM 객체");
       console.log("이전 VDOM", oldTree);
       console.log("새 VDOM", newTree);
@@ -769,20 +807,8 @@
           ),
           h("section", { className: "mb-12 flex flex-col items-center gap-4 rounded-2xl border border-outline/70 bg-white px-5 py-4", key: "massive-panel" },
             h("p", { className: "text-sm text-primary/85 text-center leading-relaxed" }, "목요일과 금요일은 각각 독립적으로 10,000개 데이터를 켤 수 있습니다. 소량 요일에서 큰 구조로 처음 들어갈 때만 전체 교체가 일어나고, 이후 같은 큰 요일을 다시 볼 때는 Patch가 사용됩니다."),
-            h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
-              h("button", {
-                type: "button",
-                key: "toggle-thursday",
-                "data-thursday-massive-toggle": "true",
-                className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
-              }, state.thursdayMassiveMode ? "목요일 10,000개 데이터 끄기" : "목요일 10,000개 데이터 켜기"),
-              h("button", {
-                type: "button",
-                key: "toggle-friday",
-                "data-friday-massive-toggle": "true",
-                className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
-              }, state.fridayMassiveMode ? "금요일 10,000개 데이터 끄기" : "금요일 10,000개 데이터 켜기")
-            )
+            buildControlRow(),
+            h("p", { className: "text-xs text-accent/80 text-center leading-relaxed", "data-debug-status": "true" }, getDebugStatusText())
           ),
           h("main", { className: "grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]", key: "main" },
             createScheduleSection("Daytime", "09:00 ~ 17:00", currentSchedule.daytime, "daytime"),
@@ -846,6 +872,11 @@
       render();
     }
 
+    function toggleDebugMode() {
+      state.debugModeEnabled = !state.debugModeEnabled;
+      render();
+    }
+
     document.addEventListener("click", (event) => {
       const thursdayToggle = event.target.closest("[data-thursday-massive-toggle]");
       if (thursdayToggle) {
@@ -856,6 +887,12 @@
       const fridayToggle = event.target.closest("[data-friday-massive-toggle]");
       if (fridayToggle) {
         toggleFridayMassiveMode();
+        return;
+      }
+
+      const debugToggle = event.target.closest("[data-debug-toggle]");
+      if (debugToggle) {
+        toggleDebugMode();
         return;
       }
 
