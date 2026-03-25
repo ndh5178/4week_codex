@@ -337,8 +337,7 @@
         useFullReload: decision.useFullReload,
         renderMode,
         domUpdates: stats.domUpdates,
-        reason: decision.reason,
-        snapshot: lastSnapshotSummary
+        reason: decision.reason
       };
     }
 
@@ -367,15 +366,6 @@
         const currentProfileClass = latest.currentProfile === "normal"
           ? "border-slate-200 bg-slate-100 text-slate-800"
           : "border-indigo-200 bg-indigo-50 text-indigo-900";
-        const snapshot = latest.snapshot || {
-          key: "not-saved",
-          overrideCount: 0,
-          saved: false,
-          citySaved: false,
-          daytimeCount: 0,
-          nightCount: 0
-        };
-
         whiteboxSummaryNode.innerHTML = `
           <div class="rounded-2xl border border-outline/70 bg-surface px-4 py-4">
             <p class="text-sm font-medium text-primary">${escapeHtml(scenario ? scenario.subtitle : latest.stepLabel)}</p>
@@ -412,27 +402,6 @@
             <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
               <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Next Massive</p>
               <p class="mt-2 text-lg font-semibold ${latest.isNextMassive ? "text-indigo-900" : "text-primary"}">${formatBoolean(latest.isNextMassive)}</p>
-            </div>
-          </div>
-          <div class="rounded-2xl border border-outline/70 bg-white px-4 py-4">
-            <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Snapshot Summary</p>
-            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p class="text-xs text-accent/70">snapshot key</p>
-                <p class="mt-1 text-sm font-semibold text-primary">${escapeHtml(snapshot.key)}</p>
-              </div>
-              <div>
-                <p class="text-xs text-accent/70">override count</p>
-                <p class="mt-1 text-sm font-semibold text-primary">${escapeHtml(String(snapshot.overrideCount))}</p>
-              </div>
-              <div>
-                <p class="text-xs text-accent/70">saved city/day/night</p>
-                <p class="mt-1 text-sm font-semibold text-primary">${escapeHtml(`${formatBoolean(snapshot.citySaved)} / ${snapshot.daytimeCount} / ${snapshot.nightCount}`)}</p>
-              </div>
-              <div>
-                <p class="text-xs text-accent/70">snapshot saved</p>
-                <p class="mt-1 text-sm font-semibold ${snapshot.saved ? "text-emerald-800" : "text-primary"}">${formatBoolean(snapshot.saved)}</p>
-              </div>
             </div>
           </div>
           <div class="rounded-2xl border border-outline/70 bg-white px-4 py-4">
@@ -476,10 +445,6 @@
               <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
                 <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Reload</span>
                 <span class="text-sm font-semibold text-primary">${formatBoolean(snapshot.useFullReload)}</span>
-              </div>
-              <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
-                <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Snapshot Key</span>
-                <span class="text-sm font-semibold text-primary">${escapeHtml(snapshot.snapshot?.key || "not-saved")}</span>
               </div>
             </div>
             <p class="mt-3 text-sm leading-relaxed text-primary/75">${escapeHtml(snapshot.reason)}</p>
