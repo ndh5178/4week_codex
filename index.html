@@ -481,7 +481,7 @@
   <div class="main-split">
     <!-- Left: Real DOM (iframe) -->
     <div class="panel">
-      <div class="panel-header"><span class="dot dc"></span>Real DOM — Patch 결과 렌더링</div>
+      <div class="panel-header"><span class="dot dc"></span>실행 영역 — Live Preview</div>
       <iframe id="real-dom-iframe" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
     </div>
 
@@ -581,9 +581,10 @@ function domToVNode(node) {
 
   // 텍스트 노드 처리
   if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.textContent;
-    if (!text.trim()) return null; // 공백 전용 텍스트 무시
-    return { type: 'text', text, key: null };
+    const text = node.textContent || '';
+    const normalized = text.trim();
+    if (!normalized) return null; // 공백 전용 텍스트 무시
+    return { type: 'text', text: normalized, key: null };
   }
 
   // 주석 및 기타 노드 무시
@@ -614,14 +615,15 @@ function domToVNode(node) {
 /**
  * VNode를 실제 DOM 요소로 변환 (innerHTML 사용 금지)
  * @param {VNode} vnode
+ * @param {Document} doc
  * @returns {Node}
  */
-function vnodeToDOM(vnode) {
+function vnodeToDOM(vnode, doc = document) {
   if (vnode.type === 'text') {
-    return document.createTextNode(vnode.text);
+    return doc.createTextNode(vnode.text);
   }
 
-  const el = document.createElement(vnode.tagName);
+  const el = doc.createElement(vnode.tagName);
 
   // 속성 설정
   for (const [k, v] of Object.entries(vnode.props || {})) {
@@ -633,7 +635,7 @@ function vnodeToDOM(vnode) {
   // void 태그는 자식 없음
   if (!VOID_TAGS.has(vnode.tagName)) {
     for (const child of (vnode.children || [])) {
-      el.appendChild(vnodeToDOM(child));
+      el.appendChild(vnodeToDOM(child, doc));
     }
   }
 
@@ -802,8 +804,10 @@ function flashNode(el) {
  * @param {Object[]} patches
  */
 function patch(domRoot, patches) {
-  if (!patches || !patches.length) return;
+  if (!domRoot || !patches || !patches.length) return domRoot;
   const map = buildIndexMap(domRoot);
+  const doc = domRoot.ownerDocument || document;
+  let currentRoot = domRoot;
 
   for (const p of patches) {
     const target = map.get(p.index);
@@ -813,8 +817,9 @@ function patch(domRoot, patches) {
         if (!target) break;
         const parent = target.parentNode;
         if (!parent) break;
-        const neo = vnodeToDOM(p.newV);
+        const neo = vnodeToDOM(p.newV, doc);
         parent.replaceChild(neo, target);
+        if (target === currentRoot) currentRoot = neo;
         flashNode(neo);
         break;
       }
@@ -838,7 +843,7 @@ function patch(domRoot, patches) {
       }
       case 'INSERT': {
         // 삽입 대상 위치의 노드가 있으면 그 앞에, 없으면 부모 끝에 추가
-        const neo = vnodeToDOM(p.newV);
+        const neo = vnodeToDOM(p.newV, doc);
         if (target && target.parentNode) {
           target.parentNode.insertBefore(neo, target);
         } else {
@@ -863,6 +868,8 @@ function patch(domRoot, patches) {
       }
     }
   }
+
+  return currentRoot;
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1174,12 +1181,12 @@ function showError(msg) {
  * @param {VNode} vnode
  */
 function applyState(vnode) {
-  // 편집기 동기화 → updatePreview가 iframe + live preview 모두 업데이트
+  // 히스토리 이동 시에는 편집기/미리보기/실행 영역을 committed state로 맞춘다.
   const bodyHTML = vnodeToHTML(vnode);
   setPreviewFromBodyHTML(bodyHTML);
-  updateIframe(toFullDoc(bodyHTML));
+  updateIframe(toFullDoc(bodyHTML), 'committed');
 
-  // 새 탭 broadcast (iframe은 updatePreview에서 이미 처리됨)
+  // 새 탭도 현재 committed state로 맞춘다.
   broadcastToTabs(buildFullDocument(bodyHTML));
 
   // 트리 초기화 (변경 없음)
@@ -1197,19 +1204,13 @@ function applyState(vnode) {
 
 function updatePreview() {
   const editor = document.getElementById('html-editor');
-  const preview = document.getElementById('html-preview');
-  const parsed = parseHTML(editor.value);
-  preview.innerHTML = '';
-  if (parsed) {
-    preview.appendChild(parsed.cloneNode(true));
-    // iframe도 실시간 반영
-    updateIframe(toFullDoc(editor.value.trim()));
-  } else if (editor.value.trim()) {
-    preview.textContent = '⚠ 유효하지 않은 HTML';
-    preview.style.color = 'var(--red)';
-    return;
-  }
-  preview.style.color = '';
+  const html = editor.value;
+  const parsed = parseHTML(html);
+
+  setPreviewFromBodyHTML(html, { syncEditor: false });
+  if (!parsed) return;
+
+  updateIframe(toFullDoc(html.trim()), 'draft');
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1249,6 +1250,39 @@ const fileRegistry = new Map();
 let iframeObserver = null;
 let iframeSyncTimer = null;
 let iframeSyncMuted = false;
+let iframeSyncMuteDepth = 0;
+let iframeRenderMode = 'committed';
+let pendingIframeRenderMode = 'committed';
+
+function refreshIframeSyncMuteFlag() {
+  iframeSyncMuted = iframeSyncMuteDepth > 0;
+}
+
+function beginIframeSyncMute() {
+  iframeSyncMuteDepth++;
+  refreshIframeSyncMuteFlag();
+}
+
+function endIframeSyncMute(delay = 0) {
+  setTimeout(() => {
+    iframeSyncMuteDepth = Math.max(0, iframeSyncMuteDepth - 1);
+    refreshIframeSyncMuteFlag();
+  }, delay);
+}
+
+function withIframeSyncMuted(fn, releaseDelay = 0) {
+  beginIframeSyncMute();
+  try {
+    return fn();
+  } finally {
+    endIframeSyncMute(releaseDelay);
+  }
+}
+
+function setIframeRenderMode(mode) {
+  iframeRenderMode = mode;
+  pendingIframeRenderMode = mode;
+}
 
 function extractBodySuffix(bodyHTML) {
   const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
@@ -1295,12 +1329,12 @@ function buildFullDocument(bodyHTML) {
   return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
-function setPreviewFromBodyHTML(bodyHTML) {
+function setPreviewFromBodyHTML(bodyHTML, { syncEditor = true } = {}) {
   const editor = document.getElementById('html-editor');
   const preview = document.getElementById('html-preview');
   const parsed = parseHTML(bodyHTML);
 
-  editor.value = bodyHTML;
+  if (syncEditor) editor.value = bodyHTML;
   preview.innerHTML = '';
 
   if (!parsed) {
@@ -1316,7 +1350,9 @@ function setPreviewFromBodyHTML(bodyHTML) {
 }
 
 function handleIframeLoad() {
+  iframeRenderMode = pendingIframeRenderMode;
   attachIframeObserver();
+  if (iframeRenderMode !== 'committed') return;
   syncFromIframe(false);
 }
 
@@ -1338,14 +1374,17 @@ function syncFromIframe(pushToHistory = false) {
   if (currentHTML === bodyHTML) return;
 
   setPreviewFromBodyHTML(bodyHTML);
-  renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
-  renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
-  document.getElementById('diff-log').innerHTML =
-    '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태에 동기화했습니다.</div>';
 
   if (pushToHistory) {
+    // MutationObserver 경유 (사용자가 실행 영역 직접 수정)
+    renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
+    renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+    document.getElementById('diff-log').innerHTML =
+      '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태에 동기화했습니다.</div>';
     history.push(vnode);
   } else {
+    // handleIframeLoad 경유 (iframe 자동 재로딩)
+    // vtree/diff-log는 건드리지 않음 — 직전 patch/navigation 결과 보존
     history.replaceCurrent(vnode);
   }
 }
@@ -1370,7 +1409,7 @@ function attachIframeObserver() {
   if (!target) return;
 
   iframeObserver = new MutationObserver(() => {
-    if (iframeSyncMuted) return;
+    if (iframeSyncMuted || iframeRenderMode !== 'committed') return;
     scheduleIframeSync(true);
   });
 
@@ -1388,12 +1427,11 @@ function toFullDoc(htmlContent) {
     : buildFullDocument(htmlContent);
 }
 
-function updateIframe(fullDoc) {
+function updateIframe(fullDoc, renderMode = 'committed') {
   const iframe = document.getElementById('real-dom-iframe');
-  iframeSyncMuted = true;
-  iframe.srcdoc = fullDoc;
-  setTimeout(() => {
-    iframeSyncMuted = false;
+  pendingIframeRenderMode = renderMode;
+  withIframeSyncMuted(() => {
+    iframe.srcdoc = fullDoc;
   }, 300);
 }
 
@@ -1509,8 +1547,9 @@ function resetApp(content, isFullDoc) {
   history.cursor = -1;
   history.push(vnode);
 
+  setPreviewFromBodyHTML(bodyHTML);
   const fullDoc = buildFullDocument(bodyHTML);
-  updateIframe(fullDoc);
+  updateIframe(fullDoc, 'committed');
   broadcastToTabs(fullDoc);
 
   renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
@@ -1518,8 +1557,6 @@ function resetApp(content, isFullDoc) {
 
   document.getElementById('diff-log').innerHTML =
     '<div class="diff-empty">Patch를 적용하면 변경 사항이 여기에 표시됩니다.</div>';
-
-  updatePreview();
 }
 
 function init() {
@@ -1585,18 +1622,19 @@ function init() {
     // 변경 인덱스 수집 (트리 하이라이트용)
     const changedIdx = new Set(patches.map(p => p.index));
 
-    // editor 동기화 → iframe + live preview + 새 탭 업데이트
     const bodyHTML = vnodeToHTML(newVNode);
-    editor.value = bodyHTML;
-    updatePreview();
-    broadcastToTabs(buildFullDocument(bodyHTML));
+    setPreviewFromBodyHTML(bodyHTML);
 
     // VTree 업데이트 (변경 노드 하이라이트)
     renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
     renderVTree(newVNode, changedIdx,  document.getElementById('vtree-new'));
 
-    // 히스토리 저장
-    history.push(newVNode);
+    if (patches.length) {
+      history.push(newVNode);
+      broadcastToTabs(buildFullDocument(bodyHTML));
+    }
+
+    setIframeRenderMode('committed');
   });
 
   // ↗ 새 탭에서 열기
