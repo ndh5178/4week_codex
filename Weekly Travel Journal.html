@@ -122,9 +122,9 @@
           <div class="flex flex-wrap items-center justify-center gap-3">
             <button type="button" data-thursday-massive-toggle="true" data-key="toggle-thursday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">목요일 10,000개 데이터 켜기</button>
             <button type="button" data-friday-massive-toggle="true" data-key="toggle-friday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">금요일 10,000개 데이터 켜기</button>
-            <button type="button" data-debug-toggle="true" data-key="toggle-debug" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">디버깅 모드 켜기</button>
+            <button type="button" data-debug-toggle="true" data-key="toggle-debug" class="rounded-full border px-5 py-2 text-sm font-medium border-primary bg-primary text-white">디버깅 모드 켜짐</button>
           </div>
-          <p class="text-xs text-accent/80 text-center leading-relaxed" data-debug-status="true">디버깅 모드가 꺼져 있어 개발용 로그를 숨기고 있습니다.</p>
+          <p class="text-xs text-accent/80 text-center leading-relaxed" data-debug-status="true">디버깅 모드가 활성화되어 콘솔과 VDOM 추적 로그를 출력합니다.</p>
         </section>
 
         <main class="grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]" data-key="main">
@@ -180,7 +180,7 @@
       activeDay: "Monday",
       thursdayMassiveMode: false,
       fridayMassiveMode: false,
-      debugModeEnabled: false,
+      debugModeEnabled: true,
       hasMountedMassiveThursday: false,
       hasMountedMassiveFriday: false,
       lastRenderedProfile: "normal",
@@ -428,13 +428,65 @@
       if (debugStatus) debugStatus.textContent = getDebugStatusText();
     }
 
+    function toOperationSummaryRows(operations = []) {
+      return operations.map((operation, index) => {
+        const base = {
+          no: index + 1,
+          type: operation.type || "UNKNOWN",
+          path: operation.path || operation.detail || "root"
+        };
+
+        if (operation.type === "TEXT") {
+          return {
+            ...base,
+            summary: `${operation.oldText || ""} -> ${operation.text || ""}`.trim()
+          };
+        }
+
+        if (operation.type === "PROPS") {
+          const propKeys = operation.propsDiff ? Object.keys(operation.propsDiff).join(", ") : "";
+          return {
+            ...base,
+            summary: propKeys ? `props: ${propKeys}` : "속성 변경"
+          };
+        }
+
+        if (operation.type === "REPLACE") {
+          return {
+            ...base,
+            summary: `${operation.oldV?.tagName || "?"} -> ${operation.newV?.tagName || "?"}`
+          };
+        }
+
+        if (operation.type === "INSERT" || operation.type === "CREATE") {
+          return {
+            ...base,
+            summary: operation.newV?.tagName ? `<${operation.newV.tagName}> 추가` : "노드 추가"
+          };
+        }
+
+        if (operation.type === "REMOVE") {
+          return {
+            ...base,
+            summary: operation.index !== undefined ? `index ${operation.index} 제거` : "노드 제거"
+          };
+        }
+
+        return {
+          ...base,
+          summary: operation.detail || "변경 사항"
+        };
+      });
+    }
+
     function logVirtualDomTrees(oldTree, newTree, operations = []) {
       if (!state.debugModeEnabled) return;
       console.group("Virtual DOM 객체");
       console.log("이전 VDOM", oldTree);
       console.log("새 VDOM", newTree);
       if (operations.length > 0) {
-        console.table(operations);
+        console.log("DOM 변경 작업 배열", toOperationSummaryRows(operations));
+        console.table(toOperationSummaryRows(operations));
       } else {
         console.log("DOM 변경 작업", "변경 사항 없음");
       }
@@ -448,6 +500,41 @@
         }, '*');
       }
       console.groupEnd();
+    }
+
+    function logExternalPatchApplied(oldTree, newTree, operations = []) {
+      if (!state.debugModeEnabled) return;
+      console.group("[메인 데모 Patch 적용]");
+      console.log("이전 VDOM", oldTree);
+      console.log("새 VDOM", newTree);
+      if (operations.length > 0) {
+        console.log("DOM 변경 작업 배열", toOperationSummaryRows(operations));
+        console.table(toOperationSummaryRows(operations));
+      } else {
+        console.log("DOM 변경 작업", "변경 사항 없음");
+      }
+      console.groupEnd();
+    }
+
+    function consumeQueuedExternalPatchLogs() {
+      const tabName = window.name || "";
+      if (!tabName.startsWith("weekly-travel-journal-tab:")) return;
+
+      const tabKey = tabName.slice("weekly-travel-journal-tab:".length);
+      const storageKey = `weekly-travel-journal-patch-log:${tabKey}`;
+
+      try {
+        const queued = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        if (!Array.isArray(queued) || queued.length === 0) return;
+
+        queued.forEach((entry) => {
+          logExternalPatchApplied(entry.oldTree, entry.newTree, entry.operations || []);
+        });
+
+        localStorage.removeItem(storageKey);
+      } catch (_) {
+        // ignore malformed queue
+      }
     }
 
     function h(tag, props = {}, ...children) {
@@ -902,11 +989,18 @@
       }
     });
 
+    window.addEventListener("message", (event) => {
+      const payload = event.data;
+      if (!payload || payload.type !== "external-patch-applied") return;
+      logExternalPatchApplied(payload.oldTree, payload.newTree, payload.operations || []);
+    });
+
     currentTree = domToVNode(document.getElementById("app-root"));
     globalTemplateTree = cloneVNode(currentTree);
     dayOverrides.set(getStateKey(), extractDayOverride(currentTree));
     logRender("초기 DOM 읽기", 0, 0, state.activeDay, "body 안에 있던 초기 DOM을 읽어서 Virtual DOM으로 변환했습니다.");
     logVirtualDomTrees(null, currentTree, []);
+    consumeQueuedExternalPatchLogs();
   </script>
 </body>
 </html>
