@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 24px; background: #fff; color: #333; }
+    .todo-app { max-width: 500px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 16px; color: #2c3e50; }
+    .todo-input { display: flex; gap: 8px; margin-bottom: 20px; }
+    .todo-input input { flex: 1; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+    .todo-input button { background: #4fc3f7; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .todo-list { list-style: none; padding: 0; }
+    .todo-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #f0f0f0; }
+    .todo-item.done { opacity: 0.5; text-decoration: line-through; }
+    .todo-item .checkbox { width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; }
+    .todo-item.done .checkbox { background: #69f0ae; border-color: #69f0ae; }
+    .todo-item .text { flex: 1; font-size: 14px; }
+    .todo-item .delete { color: #ff3e6c; cursor: pointer; font-size: 18px; }
+    .stats { display: flex; gap: 16px; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666; }
+    .stats span { font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+<div class="todo-app">
+  <h1>Todo List</h1>
+  <div class="todo-input">
+    <input type="text" placeholder="What needs to be done?" />
+    <button>Add</button>
+  </div>
+  <ul class="todo-list">
+    <li class="todo-item" data-key="1">
+      <div class="checkbox"></div>
+      <span class="text">Learn Virtual DOM</span>
+      <span class="delete">&times;</span>
+    </li>
+    <li class="todo-item done" data-key="2">
+      <div class="checkbox"></div>
+      <span class="text">Implement Diff Algorithm</span>
+      <span class="delete">&times;</span>
+    </li>
+    <li class="todo-item" data-key="3">
+      <div class="checkbox"></div>
+      <span class="text">Build Patch System</span>
+      <span class="delete">&times;</span>
+    </li>
+  </ul>
+  <div class="stats">
+    <div>Total: <span>3</span></div>
+    <div>Active: <span>2</span></div>
+    <div>Done: <span>1</span></div>
+  </div>
+</div>
+</body>
+</html>
