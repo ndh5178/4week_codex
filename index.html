@@ -918,6 +918,15 @@ const history = {
     return this.cursor >= 0 ? deepCopy(this.states[this.cursor]) : null;
   },
 
+  replaceCurrent(vnode) {
+    if (this.cursor < 0) {
+      this.push(vnode);
+      return;
+    }
+    this.states[this.cursor] = deepCopy(vnode);
+    this._sync();
+  },
+
   canUndo() { return this.cursor > 0; },
   canRedo() { return this.cursor < this.states.length - 1; },
 
@@ -1158,8 +1167,8 @@ function showError(msg) {
 function applyState(vnode) {
   // 편집기 동기화 → updatePreview가 iframe + live preview 모두 업데이트
   const bodyHTML = vnodeToHTML(vnode);
-  document.getElementById('html-editor').value = bodyHTML;
-  updatePreview();
+  setPreviewFromBodyHTML(bodyHTML);
+  updateIframe(toFullDoc(bodyHTML));
 
   // 새 탭 broadcast (iframe은 updatePreview에서 이미 처리됨)
   broadcastToTabs(buildFullDocument(bodyHTML));
@@ -1228,6 +1237,9 @@ const openedTabs = [];
 let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
 let currentBodySuffix = '';
 const fileRegistry = new Map();
+let iframeObserver = null;
+let iframeSyncTimer = null;
+let iframeSyncMuted = false;
 
 function extractBodySuffix(bodyHTML) {
   const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
@@ -1274,6 +1286,93 @@ function buildFullDocument(bodyHTML) {
   return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
+function setPreviewFromBodyHTML(bodyHTML) {
+  const editor = document.getElementById('html-editor');
+  const preview = document.getElementById('html-preview');
+  const parsed = parseHTML(bodyHTML);
+
+  editor.value = bodyHTML;
+  preview.innerHTML = '';
+
+  if (!parsed) {
+    if (bodyHTML.trim()) {
+      preview.textContent = '유효하지 않은 HTML';
+      preview.style.color = 'var(--red)';
+    }
+    return;
+  }
+
+  preview.appendChild(parsed.cloneNode(true));
+  preview.style.color = '';
+}
+
+function handleIframeLoad() {
+  attachIframeObserver();
+  syncFromIframe(false);
+}
+
+function syncFromIframe(pushToHistory = false) {
+  const iframe = document.getElementById('real-dom-iframe');
+  const doc = iframe?.contentDocument;
+  const root = doc?.body?.firstElementChild;
+
+  if (!root) return;
+
+  const bodyHTML = root.outerHTML;
+  const parsed = parseHTML(bodyHTML);
+  if (!parsed) return;
+
+  const vnode = domToVNode(parsed);
+  const currentVNode = history.getCurrent();
+  const currentHTML = currentVNode ? vnodeToHTML(currentVNode) : '';
+
+  if (currentHTML === bodyHTML) return;
+
+  setPreviewFromBodyHTML(bodyHTML);
+  renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
+  renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+  document.getElementById('diff-log').innerHTML =
+    '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태에 동기화했습니다.</div>';
+
+  if (pushToHistory) {
+    history.push(vnode);
+  } else {
+    history.replaceCurrent(vnode);
+  }
+}
+
+function scheduleIframeSync(pushToHistory = true) {
+  clearTimeout(iframeSyncTimer);
+  iframeSyncTimer = setTimeout(() => {
+    syncFromIframe(pushToHistory);
+  }, 120);
+}
+
+function attachIframeObserver() {
+  const iframe = document.getElementById('real-dom-iframe');
+  const doc = iframe?.contentDocument;
+  const target = doc?.body;
+
+  if (iframeObserver) {
+    iframeObserver.disconnect();
+    iframeObserver = null;
+  }
+
+  if (!target) return;
+
+  iframeObserver = new MutationObserver(() => {
+    if (iframeSyncMuted) return;
+    scheduleIframeSync(true);
+  });
+
+  iframeObserver.observe(target, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true
+  });
+}
+
 function toFullDoc(htmlContent) {
   return /^\s*<!DOCTYPE|^\s*<html/i.test(htmlContent)
     ? htmlContent
@@ -1282,7 +1381,11 @@ function toFullDoc(htmlContent) {
 
 function updateIframe(fullDoc) {
   const iframe = document.getElementById('real-dom-iframe');
+  iframeSyncMuted = true;
   iframe.srcdoc = fullDoc;
+  setTimeout(() => {
+    iframeSyncMuted = false;
+  }, 300);
 }
 
 function broadcastToTabs(fullDoc) {
@@ -1414,6 +1517,9 @@ function init() {
   const editor = document.getElementById('html-editor');
   const selector = document.getElementById('file-selector');
   const folderInput = document.getElementById('folder-input');
+  const iframe = document.getElementById('real-dom-iframe');
+
+  iframe.addEventListener('load', handleIframeLoad);
 
   // ── 파일 셀렉터 초기화 ──
   registerDefaultTemplates();
