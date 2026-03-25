@@ -1330,6 +1330,17 @@ function buildFullDocument(bodyHTML) {
   return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
+function queuePatchLogForTab(tabKey, payload) {
+  try {
+    const storageKey = `weekly-travel-journal-patch-log:${tabKey}`;
+    const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    current.push(payload);
+    localStorage.setItem(storageKey, JSON.stringify(current));
+  } catch (_) {
+    // ignore storage errors
+  }
+}
+
 function setPreviewFromBodyHTML(bodyHTML, { syncEditor = true } = {}) {
   const editor = document.getElementById('html-editor');
   const preview = document.getElementById('html-preview');
@@ -1438,14 +1449,21 @@ function updateIframe(fullDoc, renderMode = 'committed') {
 
 function broadcastToTabs(fullDoc) {
   for (let i = openedTabs.length - 1; i >= 0; i--) {
-    if (openedTabs[i].closed) {
+    const entry = openedTabs[i];
+    const tab = entry?.win;
+    if (!tab || tab.closed) {
       openedTabs.splice(i, 1);
       continue;
     }
     try {
       const blob = new Blob([fullDoc], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-      openedTabs[i].location.href = url;
+      tab.location.href = url;
+      try {
+        tab.name = `weekly-travel-journal-tab:${entry.key}`;
+      } catch (_) {
+        // ignore
+      }
       setTimeout(() => URL.revokeObjectURL(url), 3000);
     } catch (_) {
       openedTabs.splice(i, 1);
@@ -1633,6 +1651,29 @@ function init() {
     if (patches.length) {
       history.push(newVNode);
       broadcastToTabs(buildFullDocument(bodyHTML));
+      const patchPayload = {
+        type: 'external-patch-applied',
+        source: 'main-demo',
+        oldTree: deepCopy(oldVNode),
+        newTree: deepCopy(newVNode),
+        operations: deepCopy(patches),
+        appliedAt: new Date().toISOString()
+      };
+
+      for (let i = openedTabs.length - 1; i >= 0; i--) {
+        const entry = openedTabs[i];
+        const tab = entry?.win;
+        if (!tab || tab.closed) {
+          openedTabs.splice(i, 1);
+          continue;
+        }
+        try {
+          queuePatchLogForTab(entry.key, patchPayload);
+          tab.postMessage(patchPayload, '*');
+        } catch (_) {
+          openedTabs.splice(i, 1);
+        }
+      }
     }
 
     setIframeRenderMode('committed');
@@ -1644,10 +1685,18 @@ function init() {
     if (!currentVNode) return;
     const bodyHTML = vnodeToHTML(currentVNode);
     const fullDoc = buildFullDocument(bodyHTML);
+    const tabKey = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const blob = new Blob([fullDoc], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const tab = window.open(url, '_blank');
-    if (tab) { openedTabs.push(tab); }
+    if (tab) {
+      try {
+        tab.name = `weekly-travel-journal-tab:${tabKey}`;
+      } catch (_) {
+        // ignore
+      }
+      openedTabs.push({ win: tab, key: tabKey });
+    }
     setTimeout(() => URL.revokeObjectURL(url), 3000);
   });
 
