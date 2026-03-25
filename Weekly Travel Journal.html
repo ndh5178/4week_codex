@@ -188,7 +188,158 @@
     };
 
     const appHost = document.getElementById("app-host");
+    const dayOverrides = new Map();
     let currentTree = null;
+    let globalTemplateTree = null;
+
+    function cloneVNode(vnode) {
+      return vnode ? JSON.parse(JSON.stringify(vnode)) : null;
+    }
+
+    function getProfileFromFlags(thursdayMassiveMode, fridayMassiveMode, day) {
+      if (thursdayMassiveMode && day === "Thursday") return "thursday-massive";
+      if (fridayMassiveMode && day === "Friday") return "friday-massive";
+      return "normal";
+    }
+
+    function getStateKey(day = state.activeDay, thursdayMassiveMode = state.thursdayMassiveMode, fridayMassiveMode = state.fridayMassiveMode) {
+      const profile = getProfileFromFlags(thursdayMassiveMode, fridayMassiveMode, day);
+      return `${day}|${profile}`;
+    }
+
+    function findNodeByKey(vnode, key) {
+      if (!vnode || vnode.type === "TEXT") return null;
+      if (vnode.key === key) return vnode;
+      for (const child of vnode.children || []) {
+        const found = findNodeByKey(child, key);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function extractDayOverride(tree) {
+      const header = findNodeByKey(tree, "header");
+      const daytimeList = findNodeByKey(tree, "daytime-list");
+      const nightList = findNodeByKey(tree, "night-list");
+
+      return {
+        cityNode: header && header.children[2] ? cloneVNode(header.children[2]) : null,
+        daytimeList: cloneVNode(daytimeList),
+        nightList: cloneVNode(nightList)
+      };
+    }
+
+    function saveCurrentSnapshot() {
+      const root = document.getElementById("app-root");
+      if (!root) return;
+
+      const latestTree = domToVNode(root);
+      if (!latestTree) return;
+
+      currentTree = latestTree;
+      globalTemplateTree = cloneVNode(latestTree);
+      dayOverrides.set(getStateKey(), extractDayOverride(latestTree));
+    }
+
+    function createScheduleListItems(sectionKey, items) {
+      return items.map((item, index) =>
+        h("li", {
+          key: `${sectionKey}-item-${index}`,
+          "data-stop-index": String(index),
+          className: "rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85"
+        }, item)
+      );
+    }
+
+    function syncDayButtons(navNode, activeDay) {
+      const buttonRow = navNode?.children?.[0];
+      if (!buttonRow || !buttonRow.children) return;
+
+      for (const buttonNode of buttonRow.children) {
+        if (!buttonNode || buttonNode.type !== "ELEMENT") continue;
+
+        const day = buttonNode.props?.["data-day"];
+        const isActive = day === activeDay;
+
+        buttonNode.props = {
+          ...buttonNode.props,
+          className: `relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group ${isActive ? "bg-primary border-primary text-white shadow-lg" : "bg-transparent border-outline text-accent hover:border-primary hover:text-primary"}`
+        };
+
+        const nonIndicatorChildren = (buttonNode.children || []).filter((child) => {
+          return !(child && child.type === "ELEMENT" && child.tag === "span" && child.props?.className === "absolute -bottom-2 w-1 h-1 bg-primary rounded-full");
+        });
+
+        buttonNode.children = isActive
+          ? [...nonIndicatorChildren, h("span", { className: "absolute -bottom-2 w-1 h-1 bg-primary rounded-full" })]
+          : nonIndicatorChildren;
+      }
+    }
+
+    function applyDaySpecificContent(baseTree, day) {
+      const currentSchedule = getScheduleData(day);
+      const override = dayOverrides.get(getStateKey(day));
+
+      const header = findNodeByKey(baseTree, "header");
+      if (header) {
+        if (override?.cityNode) {
+          header.children[2] = cloneVNode(override.cityNode);
+        } else if (header.children[2] && header.children[2].type === "ELEMENT") {
+          header.children[2].children = [{ type: "TEXT", value: currentSchedule.city, key: null }];
+        }
+      }
+
+      const nav = findNodeByKey(baseTree, "nav");
+      if (nav) {
+        syncDayButtons(nav, day);
+      }
+
+      const comparePanel = findNodeByKey(baseTree, "compare-panel");
+      if (comparePanel) {
+        comparePanel.children[2] = h("p", { className: "text-sm font-medium text-primary mb-2", "data-render-info": "true" }, `${state.lastRenderMode} | DOM 蹂寃?${state.lastDomUpdates}??| ${state.lastDuration.toFixed(3)}ms`);
+        comparePanel.children[3] = h("p", { className: "text-xs text-accent/80 leading-relaxed", "data-render-reason": "true" }, state.lastReason);
+      }
+
+      const massivePanel = findNodeByKey(baseTree, "massive-panel");
+      if (massivePanel) {
+        massivePanel.children[1] = h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
+          h("button", {
+            type: "button",
+            key: "toggle-thursday",
+            "data-thursday-massive-toggle": "true",
+            className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+          }, state.thursdayMassiveMode ? "紐⑹슂??10,000媛??곗씠???꾧린" : "紐⑹슂??10,000媛??곗씠??耳쒓린"),
+          h("button", {
+            type: "button",
+            key: "toggle-friday",
+            "data-friday-massive-toggle": "true",
+            className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+          }, state.fridayMassiveMode ? "湲덉슂??10,000媛??곗씠???꾧린" : "湲덉슂??10,000媛??곗씠??耳쒓린")
+        );
+      }
+
+      const daytimeList = findNodeByKey(baseTree, "daytime-list");
+      if (daytimeList) {
+        if (override?.daytimeList) {
+          daytimeList.props = cloneVNode(override.daytimeList).props;
+          daytimeList.children = cloneVNode(override.daytimeList).children;
+        } else {
+          daytimeList.children = createScheduleListItems("daytime", currentSchedule.daytime);
+        }
+      }
+
+      const nightList = findNodeByKey(baseTree, "night-list");
+      if (nightList) {
+        if (override?.nightList) {
+          nightList.props = cloneVNode(override.nightList).props;
+          nightList.children = cloneVNode(override.nightList).children;
+        } else {
+          nightList.children = createScheduleListItems("night", currentSchedule.night);
+        }
+      }
+
+      return baseTree;
+    }
 
     function buildBulkStops(city, prefix, count) {
       return Array.from({ length: count }, (_, index) => `${city} ${prefix} ${index + 1}`);
@@ -591,18 +742,12 @@
         h(
           "ul",
           { className: "space-y-4 text-left max-h-[340px] overflow-y-auto px-2", key: `${sectionKey}-list` },
-          items.map((item, index) =>
-            h("li", {
-              key: `${sectionKey}-item-${index}`,
-              "data-stop-index": String(index),
-              className: "rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85"
-            }, item)
-          )
+          createScheduleListItems(sectionKey, items)
         )
       );
     }
 
-    function renderApp() {
+    function buildDefaultAppTree() {
       const currentSchedule = getScheduleData(state.activeDay);
       return h(
         "div",
@@ -650,6 +795,11 @@
       );
     }
 
+    function renderApp() {
+      const baseTree = globalTemplateTree ? cloneVNode(globalTemplateTree) : buildDefaultAppTree();
+      return applyDaySpecificContent(baseTree, state.activeDay);
+    }
+
     function render() {
       const nextTree = renderApp();
       const decision = decideRenderStrategy();
@@ -677,17 +827,20 @@
 
     function setActiveDay(day) {
       if (state.activeDay === day) return;
+      saveCurrentSnapshot();
       state.activeDay = day;
       render();
     }
 
     function toggleThursdayMassiveMode() {
+      saveCurrentSnapshot();
       state.thursdayMassiveMode = !state.thursdayMassiveMode;
       if (!state.thursdayMassiveMode) state.hasMountedMassiveThursday = false;
       render();
     }
 
     function toggleFridayMassiveMode() {
+      saveCurrentSnapshot();
       state.fridayMassiveMode = !state.fridayMassiveMode;
       if (!state.fridayMassiveMode) state.hasMountedMassiveFriday = false;
       render();
@@ -713,6 +866,8 @@
     });
 
     currentTree = domToVNode(document.getElementById("app-root"));
+    globalTemplateTree = cloneVNode(currentTree);
+    dayOverrides.set(getStateKey(), extractDayOverride(currentTree));
     logRender("초기 DOM 읽기", 0, 0, state.activeDay, "body 안에 있던 초기 DOM을 읽어서 Virtual DOM으로 변환했습니다.");
     logVirtualDomTrees(null, currentTree, []);
   </script>
