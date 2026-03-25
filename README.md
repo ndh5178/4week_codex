@@ -382,3 +382,145 @@ virtual-dom-diff/
 <p align="center">
   Made with Vanilla JS — no frameworks, no dependencies.
 </p>
+
+---
+
+## White-box Scenario Diagrams
+
+The `Weekly Travel Journal.html` demo uses four presentation scenarios.
+Each scenario is documented with:
+
+- input
+- internal branch
+- render result
+- code point to inspect
+
+### Scenario 1: Monday -> Tuesday uses patch
+
+```mermaid
+flowchart TD
+    A["Scenario 1 button"] --> B["resetDemoState(activeDay=Monday)"]
+    B --> C["setActiveDay('Tuesday')"]
+    C --> D["saveCurrentSnapshot()"]
+    D --> E["render()"]
+    E --> F["decideRenderStrategy()"]
+    F --> G["useFullReload = false"]
+    G --> H["patchNode(...)"]
+    H --> I["buildWhiteboxInspection(...)"]
+    I --> J["Panel shows Virtual DOM Patch"]
+```
+
+```js
+function setActiveDay(day) {
+  if (state.activeDay === day) return;
+  saveCurrentSnapshot();
+  state.activeDay = day;
+  render();
+}
+```
+
+Check values:
+
+- `state.activeDay === "Tuesday"`
+- `decision.useFullReload === false`
+- `renderMode === "Virtual DOM Patch"`
+
+### Scenario 2: Wednesday -> Thursday updates shared layout
+
+```mermaid
+flowchart TD
+    A["Scenario 2 button"] --> B["resetDemoState(activeDay=Wednesday)"]
+    B --> C["setActiveDay('Thursday')"]
+    C --> D["renderApp()"]
+    D --> E["applyDaySpecificContent(baseTree, day)"]
+    E --> F["syncDayButtons(nav, day)"]
+    E --> G["replace city text and list data"]
+    F --> H["render()"]
+    G --> H
+    H --> I["useFullReload = false"]
+    I --> J["patchNode(...)"]
+```
+
+```js
+function applyDaySpecificContent(baseTree, day) {
+  const currentSchedule = getScheduleData(day);
+  const header = findNodeByKey(baseTree, "header");
+  const nav = findNodeByKey(baseTree, "nav");
+  const daytimeList = findNodeByKey(baseTree, "daytime-list");
+  const nightList = findNodeByKey(baseTree, "night-list");
+}
+```
+
+Check values:
+
+- `useFullReload === false`
+- shared layout stays the same
+- city text and list contents change
+
+### Scenario 3: Entering Thursday 10,000 mode uses full reload
+
+```mermaid
+flowchart TD
+    A["Scenario 3 button"] --> B["resetDemoState(activeDay=Thursday, massive=false)"]
+    B --> C["toggleThursdayMassiveMode()"]
+    C --> D["state.thursdayMassiveMode = true"]
+    D --> E["render()"]
+    E --> F["decideRenderStrategy()"]
+    F --> G["useFullReload = true"]
+    G --> H["appHost.innerHTML = ''"]
+    H --> I["createDomNode(nextTree, stats)"]
+    I --> J["Panel shows 전체 DOM 교체"]
+```
+
+```js
+if (!isCurrentMassive && isNextMassive) {
+  return {
+    useFullReload: true,
+    reason: "목요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다.",
+    nextProfile
+  };
+}
+```
+
+Check values:
+
+- `state.thursdayMassiveMode === true`
+- `decision.nextProfile === "thursday-massive"`
+- `decision.useFullReload === true`
+
+### Scenario 4: Thursday massive -> Friday massive uses keyed patch
+
+```mermaid
+flowchart TD
+    A["Scenario 4 button"] --> B["resetDemoState(Thursday massive, Friday massive)"]
+    B --> C["setActiveDay('Friday')"]
+    C --> D["render()"]
+    D --> E["decideRenderStrategy()"]
+    E --> F["useFullReload = false"]
+    F --> G["patchNode(...)"]
+    G --> H["patchChildren(parent, oldChildren, newChildren)"]
+    H --> I["childrenHaveKeys()"]
+    I --> J["hasStableKeyOrder()"]
+    J --> K["key-based patch path"]
+    K --> L["Panel shows Keyed Patch"]
+```
+
+```js
+function patchChildren(parent, oldChildren, newChildren, stats) {
+  const useKeyedDiff = childrenHaveKeys(oldChildren) || childrenHaveKeys(newChildren);
+
+  if (hasStableKeyOrder(oldChildren, newChildren)) {
+    for (let index = 0; index < newChildren.length; index += 1) {
+      patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+    }
+    return;
+  }
+}
+```
+
+Check values:
+
+- `state.activeDay === "Friday"`
+- `decision.nextProfile === "friday-massive"`
+- `decision.useFullReload === false`
+- keyed diff path is used
