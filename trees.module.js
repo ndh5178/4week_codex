@@ -543,48 +543,17 @@
           ]
         : ['(no props)']
     };
-    const summaryCards = [
-      { label: 'Root', value: newVNode?.tagName || oldVNode?.tagName || (isEmpty ? 'waiting' : 'unknown') },
-      { label: 'Patches', value: isEmpty ? 'data pending / dominant NONE' : `${patches.length} changes / dominant ${getDominantPatchType(patches)}` },
-      { label: 'Changed', value: isEmpty ? '0 highlighted nodes / waiting' : `${changedIndexes.size} highlighted nodes` }
-    ];
 
     return {
       eyebrow: meta.eyebrow || 'Explorer / Trees',
       title: meta.title || 'VDOM Tree Explorer',
       badge: meta.badge || (isEmpty ? 'WAITING' : getDominantPatchType(patches)),
-      searchPlaceholder: 'Search JSX Nodes...',
-      summaryTitle: meta.summaryTitle || 'VNode Structure',
       summaryCopy: meta.summaryCopy || `총 ${layout.nodes.length}개 노드를 기준으로 트리 구조를 생성했고, ${patches.length}개의 patch를 바탕으로 변경 노드를 강조했습니다.`,
-      inspectorFile: meta.inspectorFile || 'runtime-vdom',
-      inspector: inspectorNode ? {
-        component: inspectorNode.vnode.type === 'text' ? 'text' : inspectorNode.vnode.tagName,
-        children: `${(inspectorNode.vnode.children || []).length} NODES`,
-        parent: inspectorNode.parentIndex === null
-          ? '(root)'
-          : (layout.nodes.find((node) => node.id === inspectorNode.parentIndex)?.vnode.tagName || 'unknown'),
-        props: inspectorNode.vnode.type === 'text'
-          ? [`text: "${shorten(inspectorNode.vnode.text || '', 42)}"`]
-          : getPropSummary(inspectorNode.vnode.props)
-      } : {
-        component: 'unknown',
-        children: '0 NODES',
-        parent: '(root)',
-        props: ['(no props)']
-      },
-      summaryCards: [
-        { label: 'Root', value: newVNode?.tagName || oldVNode?.tagName || 'unknown' },
-        { label: 'Patches', value: `${patches.length} changes / dominant ${getDominantPatchType(patches)}` },
-        { label: 'Changed', value: `${changedIndexes.size} highlighted nodes` }
-      ],
       nodes: layout.nodes,
       edges: layout.edges,
       patches,
       oldVNode,
       newVNode,
-      summaryCopy,
-      inspector,
-      summaryCards,
       isEmpty,
       emptyStateTitle: meta.emptyStateTitle || 'Tree Data Pending',
       emptyStateCopy: meta.emptyStateCopy || '이 영역은 Tree가 렌더될 자리입니다. 아직 입력 데이터가 없어 기본 프레임만 먼저 표시하고 있습니다.'
@@ -606,6 +575,7 @@
         grid-template-rows: auto 1fr;
         min-height: 320px;
         height: 100%;
+        position: relative;
         background: var(--bg-panel, #0d1120);
         color: var(--text-primary, #e8f0fe);
       }
@@ -649,11 +619,7 @@
         color: var(--text-secondary, #8898b4);
         border-color: rgba(30, 45, 69, 0.9);
       }
-      .trees-module__body {
-        display: grid;
-        grid-template-columns: minmax(0, 1.18fr) 290px;
-        min-height: 0;
-      }
+      .trees-module__body { display: grid; min-height: 0; }
       .trees-module__canvas {
         position: relative;
         overflow: hidden;
@@ -666,22 +632,6 @@
         width: 100%;
         height: 100%;
         min-height: 360px;
-      }
-      .trees-module__search {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(30, 45, 69, 0.9);
-        background: rgba(17, 24, 39, 0.72);
-        color: var(--text-secondary, #8898b4);
-        font-size: 10px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
       }
       .trees-module__empty {
         position: absolute;
@@ -725,97 +675,12 @@
         font-size: 13px;
         line-height: 1.65;
       }
-      .trees-module__inspector {
-        position: absolute;
-        left: 20px;
-        bottom: 20px;
-        width: min(280px, calc(100% - 40px));
-        border: 1px solid rgba(30, 45, 69, 0.9);
-        border-radius: 10px;
-        background: rgba(17, 24, 39, 0.9);
-        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
-        padding: 14px;
-      }
-      .trees-module__inspector-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-      .trees-module__inspector-title,
-      .trees-module__summary-label {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: var(--text-secondary, #8898b4);
-      }
-      .trees-module__inspector-chip {
-        border-radius: 999px;
-        padding: 3px 8px;
-        background: rgba(79, 195, 247, 0.08);
-        color: var(--cyan, #0ff5ce);
-        font-size: 10px;
-      }
-      .trees-module__inspector-grid {
-        display: grid;
-        gap: 8px;
-        font-family: var(--font-mono, 'JetBrains Mono', monospace);
-        font-size: 11px;
-        color: var(--text-secondary, #8898b4);
-      }
-      .trees-module__inspector-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-      }
-      .trees-module__props {
-        padding-top: 8px;
-        border-top: 1px solid rgba(30, 45, 69, 0.7);
-      }
-      .trees-module__props-box {
-        margin-top: 6px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        background: rgba(8, 11, 20, 0.9);
-        border: 1px solid rgba(30, 45, 69, 0.8);
-        line-height: 1.6;
-      }
-      .trees-module__summary {
-        border-left: 1px solid rgba(30, 45, 69, 0.9);
-        background: linear-gradient(180deg, rgba(17, 24, 39, 0.88), rgba(8, 11, 20, 0.98));
-        padding: 22px 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        overflow: auto;
-      }
-      .trees-module__summary-title {
-        font-family: var(--font-display, 'Syne', sans-serif);
-        font-size: 28px;
-        line-height: 1.05;
-      }
-      .trees-module__summary-copy {
-        color: var(--text-secondary, #8898b4);
-        font-size: 12px;
-        line-height: 1.75;
-      }
-      .trees-module__card {
-        border: 1px solid rgba(30, 45, 69, 0.9);
-        border-radius: 10px;
-        background: rgba(17, 24, 39, 0.76);
-        padding: 14px;
-      }
-      .trees-module__card-value {
-        color: var(--text-primary, #e8f0fe);
-        font-size: 14px;
-        line-height: 1.55;
-      }
       .trees-module__svg-line { stroke-linecap: round; }
       .trees-module__node-label {
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
         border-radius: 10px;
         font-size: 11px;
         font-weight: 700;
@@ -844,13 +709,85 @@
         color: #8ceab9;
         border-color: rgba(105, 240, 174, 0.3);
       }
-      @media (max-width: 1100px) {
-        .trees-module__body { grid-template-columns: 1fr; }
-        .trees-module__summary {
-          border-left: none;
-          border-top: 1px solid rgba(30, 45, 69, 0.9);
-        }
+      .trees-module__node-label:hover {
+        filter: brightness(1.06);
       }
+      .trees-module__node-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(6, 12, 22, 0.6);
+        backdrop-filter: blur(1px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 30;
+      }
+      .trees-module__node-modal-backdrop.is-open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .trees-module__node-modal {
+        width: min(500px, 90vw);
+        border: 1px solid rgba(30, 45, 69, 0.9);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(8, 11, 20, 0.99));
+        color: var(--text-primary, #e8f0fe);
+        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.4);
+        padding: 16px;
+      }
+      .trees-module__node-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .trees-module__node-modal-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .trees-module__node-modal-close {
+        border: 1px solid rgba(79, 195, 247, 0.28);
+        border-radius: 8px;
+        background: rgba(79, 195, 247, 0.08);
+        color: var(--text-primary, #e8f0fe);
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      .trees-module__node-modal ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .trees-module__node-modal li {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(30, 45, 69, 0.7);
+      }
+      .trees-module__modal-label {
+        color: var(--text-secondary, #8898b4);
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .trees-module__node-modal pre {
+        margin: 8px 0 0;
+        white-space: pre-wrap;
+        max-height: 120px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid rgba(30, 45, 69, 0.9);
+        background: rgba(8, 11, 20, 0.95);
+        padding: 10px;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+      @media (max-width: 1100px) { .trees-module__body { min-height: 0; } }
     `;
 
     document.head.appendChild(style);
@@ -864,35 +801,161 @@
       .join(' ');
   }
 
+  function safeStringify(value) {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+
+  function buildNodeModalMarkup(node = {}) {
+    const vnode = node.vnode || {};
+    const variant = vnode.type === 'text' ? 'text' : (vnode.tagName || 'element');
+    const path = node.path || '';
+    const props = vnode.props || {};
+    const parentIndex = node.parentIndex === null ? '(none)' : String(node.parentIndex);
+
+    const propPairs = Object.keys(props)
+      .sort()
+      .map((key) => `${key}: ${safeStringify(props[key])}`);
+    const propText = propPairs.length ? propPairs.join('\n') : '(no props)';
+
+    const lines = [
+      `<li><span class="trees-module__modal-label">ID</span><span>${escapeHtml(String(node.id))}</span></li>`,
+      `<li><span class="trees-module__modal-label">TYPE</span><span>${escapeHtml(variant)}</span></li>`,
+      `<li><span class="trees-module__modal-label">LABEL</span><span>${escapeHtml(node.label || '(empty)')}</span></li>`,
+      `<li><span class="trees-module__modal-label">DEPTH</span><span>${escapeHtml(String(node.depth || 0))}</span></li>`,
+      `<li><span class="trees-module__modal-label">CHANGED</span><span>${escapeHtml(node.isChanged ? 'YES' : 'NO')}</span></li>`,
+      `<li><span class="trees-module__modal-label">PARENT</span><span>${escapeHtml(parentIndex)}</span></li>`,
+      `<li><span class="trees-module__modal-label">PATH</span><span>${escapeHtml(path || '(unknown)')}</span></li>`
+    ].join('');
+
+    return `
+      <div class="trees-module__modal-meta">
+        <ul>${lines}</ul>
+      </div>
+      <div class="trees-module__modal-props">
+        <div class="trees-module__modal-label">PROPS</div>
+        <pre>${escapeHtml(propText)}</pre>
+      </div>
+    `;
+  }
+
+  function openNodeModal(root, node) {
+    const modal = root.querySelector('[data-trees-node-modal]');
+    const modalBody = root.querySelector('[data-trees-node-modal-body]');
+    const modalBackdrop = root.querySelector('[data-trees-node-modal-backdrop]');
+
+    if (!modal || !modalBody || !modalBackdrop) {
+      return;
+    }
+
+    modalBody.innerHTML = node ? buildNodeModalMarkup(node) : '<p>No node data.</p>';
+    modalBackdrop.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeNodeModal(root) {
+    const modal = root.querySelector('[data-trees-node-modal]');
+    const modalBackdrop = root.querySelector('[data-trees-node-modal-backdrop]');
+
+    if (!modal || !modalBackdrop) {
+      return;
+    }
+
+    modalBackdrop.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function bindTreeNodeModal(root, nodes) {
+    const modalBackdrop = root.querySelector('[data-trees-node-modal-backdrop]');
+    const closeButton = root.querySelector('[data-trees-node-modal-close]');
+    if (!modalBackdrop) {
+      return;
+    }
+
+    const nodeById = new Map(nodes.map((node) => [String(node.id), node]));
+
+    const onCanvasClick = (event) => {
+      const target = event.target.closest('[data-trees-node-id]');
+      if (!target) {
+        return;
+      }
+      event.preventDefault();
+      const nodeId = target.getAttribute('data-trees-node-id');
+      const node = nodeById.get(String(nodeId));
+      if (node) {
+        openNodeModal(root, node);
+      }
+    };
+
+    const onClose = (event) => {
+      if (event.target === closeButton || closeButton?.contains(event.target)) {
+        closeNodeModal(root);
+        return;
+      }
+      if (event.target.closest('[data-trees-node-modal]')) {
+        return;
+      }
+      closeNodeModal(root);
+    };
+
+    const onEscape = (event) => {
+      if (event.key === 'Escape') {
+        closeNodeModal(root);
+      }
+    };
+
+    const onCloseButton = () => closeNodeModal(root);
+    const onMountedRoot = root;
+    onMountedRoot.addEventListener('click', onCanvasClick);
+    modalBackdrop.addEventListener('click', onClose);
+    window.addEventListener('keydown', onEscape);
+    closeButton?.addEventListener('click', onCloseButton);
+
+    root.__treesCleanup = () => {
+      onMountedRoot.removeEventListener('click', onCanvasClick);
+      modalBackdrop.removeEventListener('click', onClose);
+      window.removeEventListener('keydown', onEscape);
+      closeButton?.removeEventListener('click', onCloseButton);
+    };
+  }
+
   // 모델을 HTML 문자열로 렌더하는 함수입니다.
   // 문자열 렌더 경로를 유지해야 다른 HTML 파일에 직접 주입할 때와 서버성 렌더링 상황을 같은 API로 커버할 수 있습니다.
   function renderToString(inputOrOptions = {}) {
-    const model = inputOrOptions.nodes ? inputOrOptions : createModel(inputOrOptions);
+    const model = Array.isArray(inputOrOptions.nodes) ? inputOrOptions : createModel(inputOrOptions);
+    const safeModel = {
+      ...model,
+      nodes: Array.isArray(model.nodes) ? model.nodes : [],
+      edges: Array.isArray(model.edges) ? model.edges : [],
+      emptyStateTitle: model.emptyStateTitle || 'Tree Data Pending',
+      emptyStateCopy: model.emptyStateCopy || 'Tree data is not ready yet.',
+      title: model.title || 'VDOM Tree Explorer',
+      eyebrow: model.eyebrow || 'Explorer / Trees',
+      badge: model.badge || 'WAITING',
+      isEmpty: Boolean(model.isEmpty)
+    };
+    const safeNodes = safeModel.nodes;
+    const safeEdges = safeModel.edges;
 
-    const edgeMarkup = model.edges.map((edge) => `
+    const edgeMarkup = safeEdges.map((edge) => `
       <line class="trees-module__svg-line" x1="${edge.x1}" y1="${edge.y1}" x2="${edge.x2}" y2="${edge.y2}" stroke="${edge.stroke}" stroke-width="${edge.width}"></line>
     `).join('');
 
-    const nodeMarkup = model.nodes.map((node) => `
+    const nodeMarkup = safeNodes.map((node) => `
       <foreignObject width="${node.width || 118}" height="44" x="${node.x - ((node.width || 118) / 2)}" y="${node.y - 22}">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="${getNodeClass(node.variant)}" title="${escapeHtml(node.path)}">${escapeHtml(node.label)}</div>
+        <div xmlns="http://www.w3.org/1999/xhtml" class="${getNodeClass(node.variant)}" data-trees-node-id="${escapeHtml(String(node.id))}" title="${escapeHtml(node.path)}">${escapeHtml(node.label)}</div>
       </foreignObject>
     `).join('');
 
-    const summaryCards = model.summaryCards.map((card) => `
-      <div class="trees-module__card">
-        <span class="trees-module__summary-label">${escapeHtml(card.label)}</span>
-        <p class="trees-module__card-value">${escapeHtml(card.value)}</p>
-      </div>
-    `).join('');
-
-    const propsMarkup = (model.inspector.props || []).map((prop) => escapeHtml(prop)).join('<br/>');
-    const emptyMarkup = model.isEmpty ? `
+    const emptyMarkup = safeModel.isEmpty ? `
       <div class="trees-module__empty">
         <div class="trees-module__empty-card">
           <span class="trees-module__empty-label">Awaiting Input</span>
-          <h3 class="trees-module__empty-title">${escapeHtml(model.emptyStateTitle)}</h3>
-          <p class="trees-module__empty-copy">${escapeHtml(model.emptyStateCopy)}</p>
+          <h3 class="trees-module__empty-title">${escapeHtml(safeModel.emptyStateTitle)}</h3>
+          <p class="trees-module__empty-copy">${escapeHtml(safeModel.emptyStateCopy)}</p>
         </div>
       </div>
     ` : '';
@@ -902,46 +965,28 @@
         <header class="trees-module__header">
           <div class="trees-module__title-wrap">
             <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-            <h2 class="trees-module__title">${escapeHtml(model.title)}</h2>
-            <span class="trees-module__badge">${escapeHtml(model.badge)}</span>
-          </div>
-          <span class="trees-module__eyebrow">${escapeHtml(model.eyebrow)}</span>
+          <h2 class="trees-module__title">${escapeHtml(safeModel.title)}</h2>
+          <span class="trees-module__badge">${escapeHtml(safeModel.badge)}</span>
+        </div>
+        <span class="trees-module__eyebrow">${escapeHtml(safeModel.eyebrow)}</span>
         </header>
         <div class="trees-module__body">
           <section class="trees-module__canvas">
-            <div class="trees-module__search">
-              <span class="material-symbols-outlined" aria-hidden="true">search</span>
-              <span>${escapeHtml(model.searchPlaceholder)}</span>
-            </div>
             <svg class="trees-module__svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
               ${edgeMarkup}
               ${nodeMarkup}
             </svg>
             ${emptyMarkup}
-            <div class="trees-module__inspector">
-              <div class="trees-module__inspector-head">
-                <span class="trees-module__inspector-title">Node Inspector</span>
-                <span class="trees-module__inspector-chip">${escapeHtml(model.inspectorFile)}</span>
-              </div>
-              <div class="trees-module__inspector-grid">
-                <div class="trees-module__inspector-row"><span>COMPONENT</span><strong>${escapeHtml(model.inspector.component)}</strong></div>
-                <div class="trees-module__inspector-row"><span>CHILDREN</span><strong>${escapeHtml(model.inspector.children)}</strong></div>
-                <div class="trees-module__inspector-row"><span>PARENT</span><strong>${escapeHtml(model.inspector.parent)}</strong></div>
-                <div class="trees-module__props">
-                  <span>PROPS</span>
-                  <div class="trees-module__props-box">${propsMarkup}</div>
-                </div>
-              </div>
+            <div class="trees-module__node-modal-backdrop" data-trees-node-modal-backdrop>
+              <section class="trees-module__node-modal" role="dialog" aria-modal="true" aria-hidden="true" data-trees-node-modal>
+                <header class="trees-module__node-modal-head">
+                  <h3 class="trees-module__node-modal-title">VNode Detail</h3>
+                  <button class="trees-module__node-modal-close" data-trees-node-modal-close type="button">Close</button>
+                </header>
+                <div class="trees-module__node-modal-meta" data-trees-node-modal-body></div>
+              </section>
             </div>
           </section>
-          <aside class="trees-module__summary">
-            <div>
-              <span class="trees-module__summary-label">Tree Summary</span>
-              <h3 class="trees-module__summary-title">${escapeHtml(model.summaryTitle)}</h3>
-              <p class="trees-module__summary-copy">${escapeHtml(model.summaryCopy)}</p>
-            </div>
-            ${summaryCards}
-          </aside>
         </div>
       </section>
     `;
@@ -954,9 +999,21 @@
       return null;
     }
 
+    const currentRoot = container.querySelector('[data-trees-module-root]');
+    if (currentRoot && currentRoot.__treesCleanup) {
+      currentRoot.__treesCleanup();
+      currentRoot.__treesCleanup = null;
+    }
+
+    const model = Array.isArray(inputOrOptions.nodes) ? inputOrOptions : createModel(inputOrOptions);
     ensureStyles();
-    container.innerHTML = renderToString(inputOrOptions);
-    return container.querySelector('[data-trees-module-root]');
+    container.innerHTML = renderToString(model);
+    const root = container.querySelector('[data-trees-module-root]');
+    if (!root) {
+      return null;
+    }
+    bindTreeNodeModal(root, Array.isArray(model.nodes) ? model.nodes : []);
+    return root;
   }
 
   // Sidebar 전환 모듈에 Trees 렌더러를 자동 등록하는 함수입니다.

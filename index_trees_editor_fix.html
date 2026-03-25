@@ -11,9 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet" />
   <style>
-    /* ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
-       CSS Custom Properties
-    ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 */
+    /* CSS Custom Properties */
     :root {
       --bg-base: #080b14;
       --bg-panel: #0d1120;
@@ -41,9 +39,7 @@
       --transition: 0.18s ease;
     }
 
-    /* ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
-       Reset & Base
-    ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 */
+    /* Reset & Base */
     *,
     *::before,
     *::after {
@@ -78,9 +74,7 @@
       z-index: 0;
     }
 
-    /* ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
-       App Layout
-    ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧 */
+    /* App Layout */
     #app {
       position: relative;
       z-index: 1;
@@ -92,7 +86,7 @@
       padding: 0 16px 60px;
     }
 
-    /* ?? Header ?? */
+    /* Header */
     header {
       display: flex;
       align-items: center;
@@ -137,7 +131,7 @@
       color: var(--text-muted);
     }
 
-    /* ?? Panel base ?? */
+    /* Panel base */
     .panel {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -194,7 +188,7 @@
       color: var(--red);
     }
 
-    /* ?? Main split ?? */
+    /* Main split */
     .main-split {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -208,17 +202,17 @@
       }
     }
 
-    /* ?? Real DOM panel (iframe) ?? */
+    /* Real DOM panel */
     #real-dom-iframe {
       flex: 1;
       width: 100%;
-      min-height: 250px;
+      min-height: 316px;
       border: none;
       background: #fff;
       border-radius: 0 0 var(--radius) var(--radius);
     }
 
-    /* ?? File selector ?? */
+    /* File selector */
     #file-selector {
       padding: 4px 10px;
       border-radius: var(--radius);
@@ -263,7 +257,7 @@
       border-radius: 2px;
     }
 
-    /* ?? Editor panel ?? */
+    /* Editor panel */
     .right-panel {
       display: flex;
       flex-direction: column;
@@ -272,7 +266,7 @@
     #html-editor {
       flex: 1;
       width: 100%;
-      min-height: 220px;
+      min-height: 405px;
       background: #060910;
       color: var(--cyan);
       border: none;
@@ -290,35 +284,7 @@
       box-shadow: inset 0 0 0 1px var(--cyan-dim);
     }
 
-    .preview-sep {
-      height: 1px;
-      background: var(--border);
-      position: relative;
-    }
-
-    .preview-sep::after {
-      content: 'LIVE PREVIEW';
-      position: absolute;
-      left: 12px;
-      top: -9px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      background: var(--bg-panel);
-      padding: 0 6px;
-    }
-
-    #html-preview {
-      padding: 12px 14px;
-      min-height: 80px;
-      max-height: 160px;
-      overflow: auto;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    /* ?? Controls bar ?? */
+    /* Controls bar */
     .controls-bar {
       display: flex;
       align-items: center;
@@ -369,7 +335,7 @@
       box-shadow: 0 0 18px rgba(15, 245, 206, 0.5);
     }
 
-    /* ?? History timeline ?? */
+    /* History timeline */
     .history-wrap {
       display: flex;
       align-items: center;
@@ -418,7 +384,7 @@
       font-weight: 700;
     }
 
-    /* ?? Diff log ?? */
+    /* Diff log */
     #diff-log {
       max-height: 230px;
       overflow-y: auto;
@@ -524,7 +490,7 @@
       padding-top: 2px;
     }
 
-    /* ?? VTree split ?? */
+    /* VTree split */
     .vtree-split {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -550,7 +516,12 @@
       gap: 12px;
     }
 
-    /* ?? Tree node ?? */
+    #console-module-shell {
+      margin-top: max(36px, 42vh);
+      scroll-margin-top: 18px;
+    }
+
+    /* Tree node */
     .tree-node {
       position: relative;
       padding-left: 14px;
@@ -645,7 +616,7 @@
       max-height: 0 !important;
     }
 
-    /* ?? Scrollbar ?? */
+    /* Scrollbar */
     ::-webkit-scrollbar {
       width: 5px;
       height: 5px;
@@ -664,7 +635,7 @@
       background: var(--text-muted);
     }
 
-    /* ?? Error toast ?? */
+    /* Error toast */
     #error-toast {
       position: fixed;
       bottom: 20px;
@@ -697,7 +668,7 @@
       <main class="console-main">
 
 
-        <!-- ?? Header ?? -->
+        <!-- Header -->
         <header>
           <div class="header-left">
             <h1>🌳 Virtual DOM &amp; Diff Algorithm</h1>
@@ -709,7 +680,7 @@
           <span class="meta">React의 핵심 아이디어를 바닐라 JS로 구현합니다.</span>
         </header>
 
-        <!-- ?? Main split ?? -->
+        <!-- Main split -->
         <div class="main-split">
           <!-- Left: Real DOM (iframe) -->
           <div class="panel">
@@ -721,12 +692,10 @@
           <div class="panel right-panel">
             <div class="panel-header"><span class="dot dy"></span>HTML 편집기 — 수정 후 Patch 적용</div>
             <textarea id="html-editor" spellcheck="false"></textarea>
-            <div class="preview-sep"></div>
-            <div id="html-preview"></div>
           </div>
         </div>
 
-        <!-- ?? Controls ?? -->
+        <!-- Controls -->
         <div class="controls-bar">
           <button class="btn" id="btn-undo" disabled>← 뒤로</button>
           <button class="btn btn-patch" id="btn-patch">▶ Patch 적용</button>
@@ -737,7 +706,7 @@
         </div>
 
         <section class="vdom-panels-group" id="vdom-panels-group">
-          <!-- ?? Diff Log ?? -->
+          <!-- Diff Log -->
           <div class="panel" style="margin-top: 0;">
             <div class="panel-header"><span class="dot db"></span>Diff 로그 패널</div>
             <div id="diff-log">
@@ -745,7 +714,7 @@
             </div>
           </div>
 
-          <!-- ?? VTree Visualization ?? -->
+          <!-- VTree Visualization -->
           <div class="vtree-split">
             <div class="panel">
               <div class="panel-header"><span class="dot dr"></span>Old VTree</div>
@@ -758,7 +727,7 @@
           </div>
         </section>
 
-        <!-- ?? Tab Log Panel ?? -->
+        <!-- Tab Log Panel -->
         <div class="panel" id="tab-log-wrap" style="margin-top:0; display:none;">
           <div class="panel-header">
             <span class="dot" style="background:#f0c040;"></span>탭 로그
@@ -773,8 +742,8 @@
           <div id="console-module-shell-body"></div>
         </section>
 
+      </main>
     </div>
-    </main>
   </div>
   <div id="error-toast"></div>
   <!-- Tree Module -->
@@ -785,26 +754,24 @@
   <script>
     window.SidebarModule.mount({
       mountSelector: '#sidebar-mount',
-      versionText: 'example'
+      treesScrollSelector: '#console-module-shell'
     });
   </script>
 
   <script>
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 1: VNode ?곗씠??援ъ“ 諛??앹꽦 ?ы띁            ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 1: VNode 데이터 구조와 생성 헬퍼 */
 
-    /** ?먭린 ?ロ옒(void) ?쒓렇 吏묓빀 */
+    /** 자기 닫힘(void) 태그 집합 */
     const VOID_TAGS = new Set([
       'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
       'link', 'meta', 'param', 'source', 'track', 'wbr'
     ]);
 
     /**
-     * VNode ?앹꽦 ?ы띁 ?⑥닔
-     * @param {string}   tagName  - HTML ?쒓렇紐?
-     * @param {Object}   props    - ?띿꽦 媛앹껜
-     * @param {...*}     children - ?먯떇 ?몃뱶(VNode ?먮뒗 臾몄옄??
+     * VNode 생성 헬퍼 함수
+     * @param {string}   tagName  - HTML 태그명
+     * @param {Object}   props    - 속성 객체
+     * @param {...*}     children - 자식 노드(VNode 또는 문자열)
      * @returns {VNode}
      */
     function createElement(tagName, props = {}, ...children) {
@@ -820,35 +787,33 @@
       };
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 2: DOM ??VNode 蹂??                        ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 2: DOM 을 VNode 로 변환 */
 
     /**
-     * ?ㅼ젣 DOM ?붿냼瑜?VNode ?몃━濡?蹂??
-     * @param {Node} node - 蹂?섑븷 DOM ?몃뱶
+     * 실제 DOM 요소를 VNode 트리로 변환
+     * @param {Node} node - 변환할 DOM 노드
      * @returns {VNode|null}
      */
     function domToVNode(node) {
       if (!node) return null;
 
-      // ?띿뒪???몃뱶 泥섎━
+      // 텍스트 노드 처리
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node.textContent;
-        if (!text.trim()) return null; // 怨듬갚 ?꾩슜 ?띿뒪??臾댁떆
+        if (!text.trim()) return null; // 공백 전용 텍스트는 무시
         return { type: 'text', text, key: null };
       }
 
-      // 二쇱꽍 諛?湲고? ?몃뱶 臾댁떆
+      // 주석 및 기타 노드는 무시
       if (node.nodeType !== Node.ELEMENT_NODE) return null;
 
-      // ?띿꽦 異붿텧
+      // 속성 추출
       const props = {};
       for (const attr of node.attributes) {
         props[attr.name] = attr.value;
       }
 
-      // ?먯떇 ?몃뱶 ?ш? 蹂??
+      // 자식 노드 재귀 변환
       const children = [];
       for (const child of node.childNodes) {
         const vchild = domToVNode(child);
@@ -865,7 +830,7 @@
     }
 
     /**
-     * VNode瑜??ㅼ젣 DOM ?붿냼濡?蹂??(innerHTML ?ъ슜 湲덉?)
+     * VNode를 실제 DOM 요소로 변환(innerHTML 사용 금지)
      * @param {VNode} vnode
      * @returns {Node}
      */
@@ -876,14 +841,14 @@
 
       const el = document.createElement(vnode.tagName);
 
-      // ?띿꽦 ?ㅼ젙
+      // 속성 설정
       for (const [k, v] of Object.entries(vnode.props || {})) {
         if (v !== null && v !== undefined) {
-          try { el.setAttribute(k, v); } catch (_) { /* ?섎せ???띿꽦紐?臾댁떆 */ }
+          try { el.setAttribute(k, v); } catch (_) { /* 잘못된 속성명은 무시 */ }
         }
       }
 
-      // void ?쒓렇???먯떇 ?놁쓬
+      // void 태그는 자식이 없음
       if (!VOID_TAGS.has(vnode.tagName)) {
         for (const child of (vnode.children || [])) {
           el.appendChild(vnodeToDOM(child));
@@ -894,7 +859,7 @@
     }
 
     /**
-     * VNode瑜?HTML 臾몄옄?대줈 蹂??(textarea ?숆린?붿슜)
+     * VNode를 HTML 문자열로 변환(textarea 동기화용)
      * @param {VNode}  vnode
      * @param {number} indent
      * @returns {string}
@@ -904,6 +869,8 @@
       const pad = '  '.repeat(indent);
 
       if (vnode.type === 'text') {
+        // 편집기에서는 실제 HTML 태그를 직접 수정하는 흐름이 핵심이므로,
+        // 텍스트 노드 직렬화 시 꺾쇠를 강제로 엔티티화하지 않고 원문을 유지합니다.
         return pad + vnode.text.trim();
       }
 
@@ -921,12 +888,10 @@
       return `${pad}<${tag}${attrs}>\n${inner}\n${pad}</${tag}>`;
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 3: Diff ?뚭퀬由ъ쬁 (O(n), 5媛吏 耳?댁뒪)       ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 3: Diff 알고리즘 */
 
     /**
-     * VNode ?쒕툕?몃━???꾩껜 ?몃뱶 ??怨꾩궛 (DFS ?몃뜳??吏꾪뻾??
+     * VNode 서브트리의 전체 노드 수 계산(DFS 인덱스 진행용)
      * @param {VNode} vnode
      * @returns {number}
      */
@@ -936,8 +901,8 @@
     }
 
     /**
-     * ??props 媛앹껜 鍮꾧탳 ??蹂寃쎈맂 ??ぉ留?諛섑솚
-     * ??젣??prop??{ old: '媛?, new: null } ?뺥깭
+     * props 객체를 비교해 변경된 항목만 반환
+     * 삭제된 prop 은 { old: 값, new: null } 형태
      * @param {Object} op - old props
      * @param {Object} np - new props
      * @returns {Object|null}
@@ -954,14 +919,14 @@
     }
 
     /**
-     * ??VNode ?몃━瑜?鍮꾧탳?섏뿬 patches 諛곗뿴 諛섑솚
-     * 媛숈? ?덈꺼쨌媛숈? ?꾩튂 ?몃뱶留?鍮꾧탳 (O(n) ?뚭퀬由ъ쬁)
+     * 두 VNode 트리를 비교해 patches 배열을 반환
+     * 같은 부모 아래 같은 위치의 노드만 비교하는 O(n) 알고리즘
      *
-     * @param {VNode}    oldV    - ?댁쟾 VNode
-     * @param {VNode}    newV    - ??VNode
-     * @param {Object[]} patches - ?꾩쟻 ?⑥튂 諛곗뿴 (李몄“ ?꾨떖)
-     * @param {{v:number}} idx  - DFS ?몃뜳??移댁슫??(李몄“ ?꾨떖)
-     * @param {string}   path   - ?붾쾭洹몄슜 寃쎈줈
+     * @param {VNode}    oldV    - 이전 VNode
+     * @param {VNode}    newV    - 새 VNode
+     * @param {Object[]} patches - 누적 patch 배열
+     * @param {{v:number}} idx   - DFS 인덱스 카운터
+     * @param {string}   path    - 디버그용 경로
      */
     function diff(oldV, newV, patches, idx, path) {
       patches = patches || [];
@@ -969,16 +934,16 @@
       path = path || 'root';
       const cur = idx.v;
 
-      // ? 1. REPLACE: ????먮뒗 ?쒓렇紐낆씠 ?ㅻ쫫 ?
+      // 1. REPLACE: 타입 또는 태그명이 다름
       if (oldV && newV &&
         (oldV.type !== newV.type ||
           (oldV.type === 'element' && oldV.tagName !== newV.tagName))) {
         patches.push({ type: 'REPLACE', index: cur, oldV, newV, path });
-        // 援먯껜 ???먯떇? 鍮꾧탳 遺덊븘??
+        // 교체 시에는 자식 비교 불필요
         return patches;
       }
 
-      // ? 2. TEXT: ?띿뒪???댁슜 蹂寃??
+      // 2. TEXT: 텍스트 내용 변경
       if (oldV && newV && oldV.type === 'text' && newV.type === 'text') {
         if (oldV.text !== newV.text) {
           patches.push({ type: 'TEXT', index: cur, oldText: oldV.text, text: newV.text, path });
@@ -986,12 +951,12 @@
         return patches;
       }
 
-      // ? 3. PROPS: ?띿꽦 蹂寃??
+      // 3. PROPS: 속성 변경
       if (oldV && newV && oldV.type === 'element') {
         const pd = diffProps(oldV.props, newV.props);
         if (pd) patches.push({ type: 'PROPS', index: cur, propsDiff: pd, path });
 
-        // ? 4+5. CHILDREN: ?먯떇 鍮꾧탳 (INSERT / REMOVE / ?ш?) ?
+        // 4+5. CHILDREN: 자식 비교(INSERT / REMOVE / 재귀)
         const oc = oldV.children || [];
         const nc = newV.children || [];
         const maxLen = Math.max(oc.length, nc.length);
@@ -1001,15 +966,15 @@
           const childPath = `${path} > ${(oc[i] || nc[i])?.tagName || 'text'}[${i}]`;
 
           if (i >= nc.length) {
-            // ?먯떇 ??젣
+            // 자식 제거
             patches.push({ type: 'REMOVE', index: idx.v, path: childPath });
             idx.v += countNodes(oc[i]) - 1;
           } else if (i >= oc.length) {
-            // ?먯떇 ?쎌엯
+            // 자식 삽입
             patches.push({ type: 'INSERT', index: idx.v, newV: nc[i], path: childPath });
             idx.v += countNodes(nc[i]) - 1;
           } else {
-            // ?ш? 鍮꾧탳
+            // 재귀 비교
             diff(oc[i], nc[i], patches, idx, childPath);
           }
         }
@@ -1018,13 +983,11 @@
       return patches;
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 4: Patch ?곸슜 (?ㅼ씠?곕툕 DOM API留??ъ슜)     ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 4: Patch 적용 */
 
     /**
-     * DFS ?쒖꽌濡?DOM ?몃━瑜??쒗쉶?섏뿬 index ??Node 留??앹꽦
-     * (domToVNode? ?숈씪??怨듬갚 臾댁떆 濡쒖쭅 ?ъ슜)
+     * DFS 순서로 DOM 트리를 순회해 index 별 Node 맵 생성
+     * domToVNode 와 동일하게 공백 텍스트는 무시
      * @param {Node}       node
      * @param {Map}        map
      * @param {{v:number}} idx
@@ -1042,7 +1005,7 @@
       return map;
     }
 
-    /** ?붿냼??flash ?좊땲硫붿씠???곸슜 */
+    /** 요소에 flash 애니메이션 적용 */
     function flashNode(el) {
       if (!el || el.nodeType === Node.TEXT_NODE) return;
       el.classList.add('node-patched');
@@ -1050,7 +1013,7 @@
     }
 
     /**
-     * patches瑜??ㅼ젣 DOM???곸슜 (innerHTML ?ъ슜 湲덉?)
+     * patches를 실제 DOM에 적용(innerHTML 사용 금지)
      * @param {Node}     domRoot
      * @param {Object[]} patches
      */
@@ -1090,12 +1053,12 @@
             break;
           }
           case 'INSERT': {
-            // ?쎌엯 ????꾩튂???몃뱶媛 ?덉쑝硫?洹??욎뿉, ?놁쑝硫?遺紐??앹뿉 異붽?
+            // 삽입 대상 위치의 노드가 있으면 그 앞에, 없으면 부모 끝에 추가
             const neo = vnodeToDOM(p.newV);
             if (target && target.parentNode) {
               target.parentNode.insertBefore(neo, target);
             } else {
-              // 遺紐??먯깋: index - 1 ?몃뱶??遺紐?
+              // 부모 탐색: index - 1 노드의 부모
               const prevNode = map.get(p.index - 1);
               const parent = prevNode
                 ? (prevNode.nodeType === Node.ELEMENT_NODE ? prevNode : prevNode.parentNode)
@@ -1118,13 +1081,11 @@
       }
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 5: HTML ?뚯꽌 ?좏떥                           ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 5: HTML 파서 유틸 */
 
     /**
-     * HTML 臾몄옄?댁쓣 ?뚯떛?섏뿬 泥?踰덉㎏ Element 諛섑솚
-     * ?뚯떛 ?ㅻ쪟 ??null 諛섑솚
+     * HTML 문자열을 파싱해 첫 번째 Element 반환
+     * 파싱 오류 시 null 반환
      * @param {string} html
      * @returns {Element|null}
      */
@@ -1139,16 +1100,14 @@
       }
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 6: State History Manager                    ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 6: State History Manager */
 
     const history = {
-      states: [],   // VNode ?ㅻ깄??諛곗뿴
-      cursor: -1,   // ?꾩옱 ?꾩튂
+      states: [],   // VNode 스냅샷 배열
+      cursor: -1,   // 현재 위치
 
       push(vnode) {
-        // ?꾩옱 ?댄썑 湲곕줉 ??젣 (undo ????蹂寃???
+        // 현재 이후 기록 삭제(undo 이후 새 변경 대응)
         this.states = this.states.slice(0, this.cursor + 1);
         this.states.push(deepCopy(vnode));
         this.cursor = this.states.length - 1;
@@ -1201,19 +1160,17 @@
       },
     };
 
-    /** VNode 源딆? 蹂듭궗 */
+    /** VNode 깊은 복사 */
     function deepCopy(obj) {
       return JSON.parse(JSON.stringify(obj));
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 7: VTree ?쒓컖???뚮뜑留?                      ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 7: VTree 시각화 렌더링 */
 
     /**
-     * VNode ???몃뱶瑜??몃━ ??Element濡?蹂??
+     * VNode 한 노드를 트리 행 Element로 변환
      * @param {VNode}    vnode
-     * @param {Set}      changedIdx - 蹂寃쎈맂 DFS ?몃뜳??吏묓빀
+     * @param {Set}      changedIdx - 변경된 DFS 인덱스 집합
      * @param {{v:number}} counter
      * @returns {HTMLElement}
      */
@@ -1237,19 +1194,19 @@
 
       const hasKids = vnode.children && vnode.children.length > 0;
 
-      // ?좉? ?꾩씠肄?
+      // 토글 아이콘
       const tog = document.createElement('span');
       tog.className = 'tree-toggle' + (hasKids ? ' open' : '');
       tog.textContent = hasKids ? '▸' : '•';
       row.appendChild(tog);
 
-      // ?쒓렇
+      // 태그
       const tagEl = document.createElement('span');
       tagEl.className = 'tree-tag';
       tagEl.textContent = `<${vnode.tagName}>`;
       row.appendChild(tagEl);
 
-      // 二쇱슂 ?띿꽦 ?쒖떆
+      // 주요 속성 표시
       for (const k of ['id', 'class', 'data-key', 'style']) {
         const v = (vnode.props || {})[k];
         if (!v) continue;
@@ -1286,7 +1243,7 @@
     }
 
     /**
-     * VNode ?몃━ ?꾩껜瑜?而⑦뀒?대꼫???뚮뜑留?
+     * VNode 트리 전체를 컨테이너에 렌더링
      * @param {VNode}       vnode
      * @param {Set<number>} changedIdx
      * @param {HTMLElement} container
@@ -1297,11 +1254,9 @@
       container.appendChild(buildTreeNode(vnode, changedIdx, { v: 0 }));
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 8: Diff 濡쒓렇 ?뚮뜑留?                        ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 8: Diff 로그 렌더링 */
 
-    /** HTML ?뱀닔臾몄옄 ?댁뒪耳?댄봽 */
+    /** HTML 특수문자 이스케이프 */
     function esc(s) {
       return String(s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -1309,21 +1264,22 @@
     }
 
     /**
-     * ?⑥튂 諛곗뿴??Diff 濡쒓렇 ?⑤꼸???뚮뜑留?
+     * 패치 배열을 Diff 로그 항목으로 렌더링
      * @param {Object[]} patches
      */
     function renderDiffLog(patches) {
+      const safePatches = Array.isArray(patches) ? patches : [];
       const logEl = document.getElementById('diff-log');
       logEl.innerHTML = '';
 
-      if (!patches.length) {
+      if (!safePatches.length) {
         logEl.innerHTML = '<div class="diff-empty">변경 사항 없음 (No changes detected)</div>';
         return;
       }
 
       const ts = new Date().toLocaleTimeString('ko-KR', { hour12: false });
 
-      for (const p of patches) {
+      for (const p of safePatches) {
         const entry = document.createElement('div');
         entry.className = 'log-entry';
 
@@ -1385,14 +1341,35 @@
       }
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 9: ??꾨씪???뚮뜑留?                          ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 9: 타임라인 렌더링 */
+
+    let treeExplorerActivated = false;
+
+    /**
+     * Tree Explorer가 아직 활성화되지 않았을 때 보여줄 안내 상태를 렌더합니다.
+     * 첫 로드에서는 데이터를 바로 주입하지 않고, 사용자가 "새 탭 열기"로 VDOM 흐름을 시작했다는 신호를 준 뒤에만
+     * 실제 트리를 그리려는 요구사항이 있어서 비어 있는 상태를 명시적으로 보여줍니다.
+     */
+    function renderTreeExplorerIdleState() {
+      const host = document.getElementById('console-module-shell-body');
+      if (!host || !window.TreesModule) return;
+
+      window.TreesModule.renderInto(host, {
+        meta: {
+          title: 'VDOM Tree Explorer',
+          badge: 'IDLE',
+          summaryTitle: 'Explorer Status',
+          summaryCopy: 'Tree Explorer는 아직 비활성 상태입니다. "새 탭 열기" 버튼을 누르면 현재 VDOM을 기준으로 트리를 만들고, 이후 변경 사항을 실시간으로 반영합니다.',
+          emptyStateTitle: 'Tree Explorer Idle',
+          emptyStateCopy: '현재는 트리 데이터가 연결되지 않았습니다. 새 탭 열기 이후부터 생성된 VDOM과 변경 구조를 이 영역에 표시합니다.'
+        }
+      });
+    }
 
     /**
      * TreesModule에 현재 비교 데이터를 전달하는 함수입니다.
-     * 기존 index 흐름에서 이미 old/new VNode와 patches를 계산하고 있으므로,
-     * host 파일은 데이터를 다시 만들지 않고 전달만 해서 결합 범위를 최소화합니다.
+     * Tree Explorer가 활성화되기 전에는 빈 상태를 유지하고, 활성화 이후에만 실제 VDOM 데이터를 넘겨
+     * "처음엔 비어 있고 이후부터 실시간 추적"이라는 화면 흐름을 안정적으로 유지합니다.
      * @param {VNode|null} oldVNode
      * @param {VNode|null} newVNode
      * @param {Object[]=} patches
@@ -1400,6 +1377,11 @@
     function renderSafeTrees(oldVNode, newVNode, patches) {
       const host = document.getElementById('console-module-shell-body');
       if (!host || !window.TreesModule) return;
+
+      if (!treeExplorerActivated) {
+        renderTreeExplorerIdleState();
+        return;
+      }
 
       window.TreesModule.renderInto(host, {
         oldVNode: oldVNode || null,
@@ -1424,9 +1406,7 @@
       }
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 10: ?먮윭 ?좎뒪??                            ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 10: 에러 토스트 */
 
     let _toastTimer = null;
     function showError(msg) {
@@ -1437,12 +1417,10 @@
       _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 11: ?곹깭 ?곸슜 (undo/redo/goTo 怨듯넻)         ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 11: 상태 적용 공통 로직 */
 
     /**
-     * VNode濡??ㅼ젣 ?곸뿭怨??몄쭛湲곕? ?숆린??
+     * VNode로 실제 영역과 편집기를 동기화
      * @param {VNode} vnode
      */
     function applyState(vnode) {
@@ -1458,42 +1436,31 @@
         '<div class="diff-empty">히스토리를 이동했습니다. Patch를 적용하면 변경사항이 표시됩니다.</div>';
 
       // 히스토리 이동은 현재 상태를 기준으로 트리를 다시 그리면 충분하므로 같은 VDOM을 old/new에 함께 전달합니다.
-      // 이렇게 해두면 undo/redo와 goTo 모두 같은 렌더 경로를 재사용해서 host 쪽 변경 범위를 최소화할 수 있습니다.
+      // Tree Explorer가 활성화된 뒤에는 undo/redo도 같은 경로로 갱신되어, 화면 상태와 탐색기 상태가 어긋나지 않게 맞춰집니다.
       renderSafeTrees(vnode, vnode, []);
     }
 
-    const ENABLE_PREVIEW_VDOM_TREE = false;
-
     function updatePreview() {
       const editor = document.getElementById('html-editor');
-      const preview = document.getElementById('html-preview');
       const parsed = parseHTML(editor.value);
-      preview.innerHTML = '';
       if (parsed) {
-        preview.appendChild(parsed.cloneNode(true));
-        // iframe???ㅼ떆媛?諛섏쁺
+        // iframe 즉시 반영
         updateIframe(toFullDoc(editor.value.trim()));
 
-        // preview 기준 Tree 갱신은 토글로 분리해 두었습니다.
-        // preview 없는 상태를 테스트할 때는 false로 두고, 다시 실시간 Tree를 보고 싶을 때만 true로 되돌리면
-        // Patch 적용/초기 로드 경로는 건드리지 않고도 비교 테스트를 안전하게 반복할 수 있습니다.
-        if (ENABLE_PREVIEW_VDOM_TREE) {
+        // Tree Explorer가 활성화된 뒤에는 편집기 입력만으로도 preview VDOM을 다시 만들어 즉시 반영합니다.
+        // 이렇게 해야 사용자가 태그를 추가/삭제하는 순간 Explorer에서도 같은 변화를 바로 볼 수 있습니다.
+        if (treeExplorerActivated) {
           const previewVNode = domToVNode(parsed.cloneNode(true));
           const currentVNode = history.getCurrent();
           const previewPatches = currentVNode ? diff(currentVNode, previewVNode) : [];
           renderSafeTrees(currentVNode || previewVNode, previewVNode, previewPatches);
         }
       } else if (editor.value.trim()) {
-        preview.textContent = '유효하지 않은 HTML';
-        preview.style.color = 'var(--red)';
         return;
       }
-      preview.style.color = '';
     }
 
-    /* ?붴븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??
-       ?? Section 13: 珥덇린 ?섑뵆 HTML & ??珥덇린??             ??
-       ?싢븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??*/
+    /* Section 12: 초기 샘플 HTML */
 
     const INITIAL_HTML = `<div class="container">
   <h1 id="title" style="color: #333;">Virtual DOM Demo</h1>
@@ -1513,7 +1480,7 @@
   </footer>
 </div>`;
 
-    /* ?? File templates & tab management ?? */
+    /* File templates & tab management */
     const DEFAULT_FILE_TEMPLATES = [
       { id: 'builtin-demo', name: 'Built-in Demo', path: null, type: 'builtin' },
       { id: 'file-html1', name: 'html1.html', path: 'html1.html', type: 'path' },
@@ -1576,22 +1543,7 @@
 
     function setPreviewFromBodyHTML(bodyHTML) {
       const editor = document.getElementById('html-editor');
-      const preview = document.getElementById('html-preview');
-      const parsed = parseHTML(bodyHTML);
-
       editor.value = bodyHTML;
-      preview.innerHTML = '';
-
-      if (!parsed) {
-        if (bodyHTML.trim()) {
-          preview.textContent = '?좏슚?섏? ?딆? HTML';
-          preview.style.color = 'var(--red)';
-        }
-        return;
-      }
-
-      preview.appendChild(parsed.cloneNode(true));
-      preview.style.color = '';
     }
 
     function handleIframeLoad() {
@@ -1620,7 +1572,8 @@
       renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
       renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
       document.getElementById('diff-log').innerHTML =
-        '<div class="diff-empty">?ㅽ뻾 ?곸뿭?먯꽌 諛쒖깮??DOM 蹂寃쎌쓣 ?꾩옱 ?곹깭???숆린?뷀뻽?듬땲??</div>';
+        '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태로 동기화했습니다.</div>';
+      renderSafeTrees(currentVNode || vnode, vnode, []);
 
       if (pushToHistory) {
         history.push(vnode);
@@ -1773,7 +1726,7 @@
         bodyHTML = extractBodyContent(content);
       }
 
-      // body??script/遺媛 ?붿냼 遺꾨━ 蹂댁〈
+      // body 뒤쪽 script/부가 요소를 분리해 보존
       currentBodySuffix = extractBodySuffix(bodyHTML);
       bodyHTML = stripBodySuffix(bodyHTML);
 
@@ -1809,8 +1762,9 @@
       const iframe = document.getElementById('real-dom-iframe');
 
       iframe.addEventListener('load', handleIframeLoad);
+      renderTreeExplorerIdleState();
 
-      // ?? ?뚯씪 ??됲꽣 珥덇린????
+      // 파일 셀렉터 초기화
       registerDefaultTemplates();
       rebuildFileSelector('builtin-demo');
       selector.addEventListener('change', () => {
@@ -1835,15 +1789,15 @@
         loadFile(firstPickedId);
       });
 
-      // ?? 珥덇린 ?곹깭 濡쒕뱶 (Built-in Demo) ??
+      // 초기 상태 로드(Built-in Demo)
       loadFile('builtin-demo');
 
-      // ?? ?대깽????
+      // 이벤트 바인딩
 
-      // ?몄쭛湲??낅젰 ???ㅼ떆媛?誘몃━蹂닿린
+      // 편집기 입력 시 실시간 반영
       editor.addEventListener('input', updatePreview);
 
-      // ??Patch ?곸슜
+      // Patch 적용
       document.getElementById('btn-patch').addEventListener('click', () => {
         const html = editor.value.trim();
         if (!html) { showError('HTML을 입력해주세요.'); return; }
@@ -1856,31 +1810,32 @@
 
         const newVNode = domToVNode(parsed);
 
-        // Diff 怨꾩궛
+        // Diff 계산
         const patches = diff(oldVNode, newVNode);
 
-        // Diff 濡쒓렇 ?뚮뜑留?
+        // Diff 로그 렌더링
         renderDiffLog(patches);
 
-        // 蹂寃??몃뜳???섏쭛 (?몃━ ?섏씠?쇱씠?몄슜)
-        const changedIdx = new Set(patches.map(p => p.index));
+        // 변경 인덱스 수집(트리 하이라이트용)
+        const safePatches = Array.isArray(patches) ? patches : [];
+        const changedIdx = new Set(safePatches.map((p) => p.index));
 
-        // editor ?숆린????iframe + live preview + ?????낅뜲?댄듃
+        // editor 값, iframe, 외부 탭 동기화
         const bodyHTML = vnodeToHTML(newVNode);
         editor.value = bodyHTML;
         updatePreview();
         broadcastToTabs(buildFullDocument(bodyHTML));
 
-        // VTree ?낅뜲?댄듃 (蹂寃??몃뱶 ?섏씠?쇱씠??
+        // VTree 갱신(변경 노드 하이라이트)
         renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
         renderVTree(newVNode, changedIdx, document.getElementById('vtree-new'));
 
-        // ?덉뒪?좊━ ???
+        // 히스토리 반영
         renderSafeTrees(oldVNode, newVNode, patches);
         history.push(newVNode);
       });
 
-      // ??????뿉???닿린
+      // 새 탭 열기
       document.getElementById('btn-newtab').addEventListener('click', () => {
         const currentVNode = history.getCurrent();
         if (!currentVNode) return;
@@ -1891,15 +1846,20 @@
         const tab = window.open(url, '_blank');
         if (tab) { openedTabs.push(tab); }
         setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+        // 사용자가 새 탭 열기를 눌렀다는 것은 "이제 생성된 VDOM 흐름을 Explorer에 연결해도 된다"는 명시적 신호로 봅니다.
+        // 이 시점부터만 트리를 활성화하면 첫 로드의 빈 상태와 이후 실시간 추적 상태를 자연스럽게 분리할 수 있습니다.
+        treeExplorerActivated = true;
+        renderSafeTrees(currentVNode, currentVNode, []);
       });
 
-      // ? ?ㅻ줈媛湲?
+      // 뒤로 가기
       document.getElementById('btn-undo').addEventListener('click', () => {
         const vnode = history.undo();
         if (vnode) applyState(vnode);
       });
 
-      // ?욎쑝濡쒓?湲???
+      // 앞으로 가기
       document.getElementById('btn-redo').addEventListener('click', () => {
         const vnode = history.redo();
         if (vnode) applyState(vnode);
@@ -1908,7 +1868,7 @@
 
     document.addEventListener('DOMContentLoaded', init);
 
-    // ?? ??濡쒓렇 ?섏떊 ??
+    // 탭 로그 수신
     window.addEventListener('message', (e) => {
       if (!e.data || e.data.type !== 'vdom-log') return;
       const { oldTree, newTree, operations } = e.data;

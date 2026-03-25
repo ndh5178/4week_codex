@@ -88,10 +88,7 @@
   const SIDEBAR_AUTO_HOST_ID = 'sidebar-auto-mount';
   const DEFAULT_VIEWS = [
     { key: 'Workspace', icon: 'grid_view', label: 'Workspace', active: true },
-    { key: 'Trees', icon: 'account_tree', label: 'Trees' },
-    { key: 'Snapshots', icon: 'history', label: 'Snapshots' },
-    { key: 'Analytics', icon: 'insights', label: 'Analytics' },
-    { key: 'Deploy', icon: 'rocket_launch', label: 'Deploy' }
+    { key: 'Trees', icon: 'account_tree', label: 'Trees' }
   ];
   let hasExplicitMount = false;
 
@@ -162,24 +159,10 @@
         gap: 12px;
       }
 
-      .console-sidebar__eyebrow {
-        font-size: 10px;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--text-secondary, #8898b4);
-      }
-
-      .console-sidebar__version {
-        margin-top: 4px;
-        color: var(--blue, #4fc3f7);
-        font-size: 11px;
-      }
-
       .console-sidebar__nav {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        margin-top: 8px;
       }
 
       .console-sidebar__button,
@@ -257,8 +240,9 @@
 
   // Sidebar 내부 버튼 마크업을 만드는 함수입니다.
   // 나중에 메뉴가 추가돼도 배열만 바꾸면 되도록, 버튼 HTML을 직접 중복 작성하지 않고 반복 생성으로 묶었습니다.
-  function buildNavButtons(views) {
-    return views.map((view) => `
+function buildNavButtons(views) {
+    const safeViews = Array.isArray(views) && views.length ? views : DEFAULT_VIEWS;
+    return safeViews.map((view) => `
       <button class="console-sidebar__button${view.active ? ' is-active' : ''}" type="button" data-side-view="${escapeHtml(view.key)}">
         <span class="material-symbols-outlined console-sidebar__icon" aria-hidden="true">${escapeHtml(view.icon)}</span>
         <span>${escapeHtml(view.label)}</span>
@@ -269,10 +253,9 @@
   // Sidebar가 소비할 순수 모델을 만드는 함수입니다.
   // DOM과 분리된 데이터 구조를 먼저 고정해 두면, 나중에 React VDOM에서는 같은 모델을 JSX로 바로 매핑할 수 있습니다.
   function createModel(options = {}) {
+    const views = Array.isArray(options.views) ? options.views : DEFAULT_VIEWS;
     return {
-      title: options.title || 'Architect Console',
-      versionText: options.versionText || 'sidebar-module',
-      views: (options.views || DEFAULT_VIEWS).map((view, index) => ({
+      views: views.map((view, index) => ({
         key: view.key,
         icon: view.icon,
         label: view.label || view.key,
@@ -287,15 +270,15 @@
     const model = Array.isArray(optionsOrModel.views) || optionsOrModel.title || optionsOrModel.versionText
       ? createModel(optionsOrModel)
       : optionsOrModel;
+    const safeModel = {
+      ...model,
+      views: Array.isArray(model.views) && model.views.length ? model.views : DEFAULT_VIEWS
+    };
 
     return `
       <aside class="console-sidebar" aria-label="Architect Console Sidebar">
-        <div>
-          <p class="console-sidebar__eyebrow">${escapeHtml(model.title)}</p>
-          <p class="console-sidebar__version">${escapeHtml(model.versionText)}</p>
-        </div>
         <nav class="console-sidebar__nav" id="console-sidebar-nav">
-          ${buildNavButtons(model.views)}
+          ${buildNavButtons(safeModel.views)}
         </nav>
       </aside>
     `;
@@ -305,6 +288,60 @@
   // 이미 getMarkup을 쓰는 문서가 있을 수 있어서 이름은 남겨 두고, 내부 구현은 새 renderToString으로 통일합니다.
   function getMarkup(options = {}) {
     return renderToString(options);
+  }
+
+  function setActiveView(sidebarElement, viewKey) {
+    if (!sidebarElement) {
+      return;
+    }
+
+    sidebarElement.querySelectorAll('[data-side-view]').forEach((button) => {
+      button.classList.toggle('is-active', button.dataset.sideView === viewKey);
+    });
+  }
+
+  function handleTreesScroll(options = {}) {
+    if (typeof options.onTreesClickScroll === 'function') {
+      options.onTreesClickScroll();
+      return;
+    }
+
+    const target = options.treesScrollTarget
+      || (typeof options.treesScrollSelector === 'string' ? document.querySelector(options.treesScrollSelector) : null)
+      || document.getElementById('console-module-shell')
+      || document.getElementById('console-module-shell-body');
+
+    if (target && typeof target.scrollIntoView === 'function') {
+      target.scrollIntoView({
+        behavior: options.treesScrollBehavior || 'smooth',
+        block: options.treesScrollBlock || 'start'
+      });
+    }
+  }
+
+  function bindSidebarEvents(sidebarElement, options = {}) {
+    if (!sidebarElement) {
+      return;
+    }
+
+    sidebarElement.querySelectorAll('[data-side-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const viewKey = button.dataset.sideView;
+        setActiveView(sidebarElement, viewKey);
+
+        if (viewKey === 'Trees') {
+          handleTreesScroll(options);
+        }
+
+        if (typeof options.onViewChange === 'function') {
+          options.onViewChange(viewKey);
+        }
+
+        window.dispatchEvent(new CustomEvent('sidebar:viewchange', {
+          detail: { viewKey }
+        }));
+      });
+    });
   }
 
   // mount 대상이 없을 때 standalone 호스트를 자동으로 만드는 함수입니다.
@@ -356,7 +393,9 @@
     }
 
     mountTarget.innerHTML = renderToString(options);
-    return mountTarget.querySelector('.console-sidebar');
+    const sidebarElement = mountTarget.querySelector('.console-sidebar');
+    bindSidebarEvents(sidebarElement, options);
+    return sidebarElement;
   }
 
   // 명시적 mount 호출 없이도 기본 Sidebar를 띄우는 함수입니다.
@@ -377,7 +416,9 @@
     }
 
     mountTarget.innerHTML = renderToString(options);
-    return mountTarget.querySelector('.console-sidebar');
+    const sidebarElement = mountTarget.querySelector('.console-sidebar');
+    bindSidebarEvents(sidebarElement, options);
+    return sidebarElement;
   }
 
   // DOM 준비 이후 자동 표시를 한 번만 시도하는 부트스트랩 함수입니다.
@@ -402,7 +443,8 @@
     renderToString,
     getMarkup,
     mount,
-    autoMount
+    autoMount,
+    setActiveView
   };
 
   scheduleAutoMount();
