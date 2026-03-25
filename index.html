@@ -75,9 +75,9 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      max-width: 1600px;
+      max-width: 1960px;
       margin: 0 auto;
-      padding: 0 16px 60px;
+      padding: 0 20px 72px;
     }
 
     /* ── Header ── */
@@ -165,7 +165,7 @@
     #real-dom-iframe {
       flex: 1;
       width: 100%;
-      min-height: 250px;
+      min-height: 420px;
       border: none;
       background: #fff;
       border-radius: 0 0 var(--radius) var(--radius);
@@ -200,7 +200,7 @@
     #html-editor {
       flex: 1;
       width: 100%;
-      min-height: 220px;
+      min-height: 420px;
       background: #060910;
       color: var(--cyan);
       border: none;
@@ -214,30 +214,6 @@
       tab-size: 2;
     }
     #html-editor:focus { box-shadow: inset 0 0 0 1px var(--cyan-dim); }
-
-    .preview-sep {
-      height: 1px;
-      background: var(--border);
-      position: relative;
-    }
-    .preview-sep::after {
-      content: 'LIVE PREVIEW';
-      position: absolute;
-      left: 12px; top: -9px;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-      color: var(--text-muted);
-      background: var(--bg-panel);
-      padding: 0 6px;
-    }
-
-    #html-preview {
-      padding: 12px 14px;
-      min-height: 80px;
-      max-height: 160px;
-      overflow: auto;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
 
     /* ── Controls bar ── */
     .controls-bar {
@@ -384,6 +360,17 @@
       overflow: auto;
     }
 
+    .vdom-panels-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #console-module-shell {
+      margin-top: 28px;
+      scroll-margin-top: 18px;
+    }
+
     /* ── Tree node ── */
     .tree-node { position: relative; padding-left: 14px; }
     .tree-node::before {
@@ -464,6 +451,10 @@
 </head>
 <body>
 <div id="app">
+  <div class="console-shell">
+    <div id="sidebar-mount"></div>
+
+    <main class="console-main">
 
   <!-- ── Header ── -->
   <header>
@@ -489,8 +480,6 @@
     <div class="panel right-panel">
       <div class="panel-header"><span class="dot dy"></span>HTML 편집기 — 수정 후 Patch 적용</div>
       <textarea id="html-editor" spellcheck="false"></textarea>
-      <div class="preview-sep"></div>
-      <div id="html-preview"></div>
     </div>
   </div>
 
@@ -505,6 +494,7 @@
   </div>
 
   <!-- ── Diff Log ── -->
+  <section class="vdom-panels-group">
   <div class="panel" style="margin-top: 0;">
     <div class="panel-header"><span class="dot db"></span>Diff 로그 패널</div>
     <div id="diff-log">
@@ -523,6 +513,7 @@
       <div class="vtree-body" id="vtree-new"></div>
     </div>
   </div>
+  </section>
 
   <!-- ── Tab Log Panel ── -->
   <div class="panel" id="tab-log-wrap" style="margin-top:0; display:none;">
@@ -533,8 +524,24 @@
     <div id="tab-log-list" style="font-size:12px; padding:8px; max-height:220px; overflow-y:auto; font-family:monospace;"></div>
   </div>
 
+  <section id="console-module-shell">
+    <div id="console-module-shell-body"></div>
+  </section>
+
+    </main>
+  </div>
+
 </div>
 <div id="error-toast"></div>
+
+<script src="./trees.module.js"></script>
+<script src="./sidebar.module.js"></script>
+<script>
+window.SidebarModule.mount({
+  mountSelector: '#sidebar-mount',
+  treesScrollSelector: '#console-module-shell'
+});
+</script>
 
 <script>
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1163,6 +1170,41 @@ function renderTimeline() {
    ║  Section 10: 에러 토스트                             ║
    ╚═══════════════════════════════════════════════════════╝ */
 
+let treeExplorerActivated = false;
+
+function renderTreeExplorerIdleState() {
+  const host = document.getElementById('console-module-shell-body');
+  if (!host || !window.TreesModule) return;
+
+  window.TreesModule.renderInto(host, {
+    meta: {
+      title: 'VDOM Tree Explorer',
+      badge: 'IDLE',
+      summaryTitle: 'Explorer Status',
+      summaryCopy: 'Tree Explorer는 아직 비활성 상태입니다. "새 탭 열기" 버튼을 누르면 현재 VDOM을 기준으로 트리를 만들고, 이후 변경 사항을 실시간으로 반영합니다.',
+      emptyStateTitle: 'Tree Explorer Idle',
+      emptyStateCopy: '현재는 트리 데이터가 연결되지 않았습니다. 새 탭 열기 이후부터 생성된 VDOM과 변경 구조를 이 영역에 표시합니다.'
+    }
+  });
+}
+
+function renderSafeTrees(oldVNode, newVNode, patches, meta = {}) {
+  const host = document.getElementById('console-module-shell-body');
+  if (!host || !window.TreesModule) return;
+
+  if (!treeExplorerActivated) {
+    renderTreeExplorerIdleState();
+    return;
+  }
+
+  window.TreesModule.renderInto(host, {
+    oldVNode: oldVNode || null,
+    newVNode: newVNode || oldVNode || null,
+    patches: Array.isArray(patches) ? patches : [],
+    meta
+  });
+}
+
 let _toastTimer = null;
 function showError(msg) {
   const el = document.getElementById('error-toast');
@@ -1196,6 +1238,7 @@ function applyState(vnode) {
   // 로그 초기화
   document.getElementById('diff-log').innerHTML =
     '<div class="diff-empty">히스토리를 이동했습니다. Patch를 적용하면 변경사항이 표시됩니다.</div>';
+  renderSafeTrees(vnode, vnode, [], { source: 'history' });
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1211,6 +1254,12 @@ function updatePreview() {
   if (!parsed) return;
 
   updateIframe(toFullDoc(html.trim()), 'draft');
+  if (treeExplorerActivated) {
+    const previewVNode = domToVNode(parsed.cloneNode(true));
+    const currentVNode = history.getCurrent();
+    const previewPatches = currentVNode ? diff(currentVNode, previewVNode) : [];
+    renderSafeTrees(currentVNode || previewVNode, previewVNode, previewPatches, { source: 'preview' });
+  }
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1347,6 +1396,7 @@ function setPreviewFromBodyHTML(bodyHTML, { syncEditor = true } = {}) {
   const parsed = parseHTML(bodyHTML);
 
   if (syncEditor) editor.value = bodyHTML;
+  if (!preview) return;
   preview.innerHTML = '';
 
   if (!parsed) {
@@ -1386,6 +1436,7 @@ function syncFromIframe(pushToHistory = false) {
   if (currentHTML === bodyHTML) return;
 
   setPreviewFromBodyHTML(bodyHTML);
+  renderSafeTrees(currentVNode || vnode, vnode, [], { source: pushToHistory ? 'iframe-sync' : 'iframe-load' });
 
   if (pushToHistory) {
     // MutationObserver 경유 (사용자가 실행 영역 직접 수정)
@@ -1573,6 +1624,7 @@ function resetApp(content, isFullDoc) {
 
   renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
   renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+  renderSafeTrees(vnode, vnode, [], { source: 'reset' });
 
   document.getElementById('diff-log').innerHTML =
     '<div class="diff-empty">Patch를 적용하면 변경 사항이 여기에 표시됩니다.</div>';
@@ -1585,6 +1637,7 @@ function init() {
   const iframe = document.getElementById('real-dom-iframe');
 
   iframe.addEventListener('load', handleIframeLoad);
+  renderTreeExplorerIdleState();
 
   // ── 파일 셀렉터 초기화 ──
   registerDefaultTemplates();
@@ -1647,6 +1700,8 @@ function init() {
     // VTree 업데이트 (변경 노드 하이라이트)
     renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
     renderVTree(newVNode, changedIdx,  document.getElementById('vtree-new'));
+    treeExplorerActivated = true;
+    renderSafeTrees(oldVNode, newVNode, patches, { source: 'patch-apply' });
 
     if (patches.length) {
       history.push(newVNode);
@@ -1698,6 +1753,8 @@ function init() {
       openedTabs.push({ win: tab, key: tabKey });
     }
     setTimeout(() => URL.revokeObjectURL(url), 3000);
+    treeExplorerActivated = true;
+    renderSafeTrees(currentVNode, currentVNode, [], { source: 'new-tab' });
   });
 
   // ◀ 뒤로가기
@@ -1742,6 +1799,9 @@ window.addEventListener('message', (e) => {
   opsEl.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">Operations Array</div>`
     + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto;">${JSON.stringify(operations, null, 2)}</pre>`;
   list.appendChild(opsEl);
+
+  treeExplorerActivated = true;
+  renderSafeTrees(oldTree, newTree, operations || [], { source: 'message' });
 });
 
 document.getElementById('btn-clear-log').addEventListener('click', () => {

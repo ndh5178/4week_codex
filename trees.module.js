@@ -204,6 +204,17 @@
 (() => {
   const TREES_STYLE_ID = 'trees-module-styles';
   const adapterRegistry = Object.create(null);
+  const journalStateByContainer = new WeakMap();
+  const JOURNAL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const JOURNAL_DAY_LABELS = {
+    Monday: '월',
+    Tuesday: '화',
+    Wednesday: '수',
+    Thursday: '목',
+    Friday: '금',
+    Saturday: '토',
+    Sunday: '일'
+  };
 
   // HTML에 텍스트를 안전하게 넣는 함수입니다.
   // 외부 파일에서 넘어온 경로/설명/속성값이 그대로 들어와도 마크업이 깨지지 않게 기본 이스케이프를 적용합니다.
@@ -221,6 +232,63 @@
     return value == null ? value : JSON.parse(JSON.stringify(value));
   }
 
+  function walkVNode(node, visit) {
+    if (!node) {
+      return;
+    }
+    visit(node);
+    const children = Array.isArray(node.children) ? node.children : [];
+    children.forEach((child) => walkVNode(child, visit));
+  }
+
+  function getClassName(node) {
+    if (!node || !node.props) {
+      return '';
+    }
+    return String(node.props.class || node.props.className || '');
+  }
+
+  function getTextContent(node) {
+    if (!node) {
+      return '';
+    }
+
+    if (node.type === 'text') {
+      return String(node.text || '').trim();
+    }
+
+    return (node.children || [])
+      .map((child) => getTextContent(child))
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function findFirstVNode(node, predicate) {
+    let matched = null;
+    walkVNode(node, (candidate) => {
+      if (!matched && predicate(candidate)) {
+        matched = candidate;
+      }
+    });
+    return matched;
+  }
+
+  function findAllVNodes(node, predicate) {
+    const matches = [];
+    walkVNode(node, (candidate) => {
+      if (predicate(candidate)) {
+        matches.push(candidate);
+      }
+    });
+    return matches;
+  }
+
+  function hasNodeKey(node, key) {
+    return node?.key === key || node?.props?.['data-key'] === key;
+  }
+
   // text/element 여부를 판별하는 기본 VNode 정규화 함수입니다.
   // 프로젝트마다 필드 이름이 약간씩 달라도 최소한의 표준 형식으로 맞춰야 내부 diff와 트리 생성 로직을 재사용할 수 있습니다.
   function normalizeVNode(node) {
@@ -228,17 +296,17 @@
       return null;
     }
 
-    if (node.type === 'text' || typeof node.text === 'string') {
+    if (node.type === 'text' || node.type === 'TEXT' || typeof node.text === 'string' || typeof node.value === 'string') {
       return {
         type: 'text',
-        text: String(node.text ?? ''),
+        text: String(node.text ?? node.value ?? ''),
         key: node.key ?? null
       };
     }
 
     return {
       type: 'element',
-      tagName: String(node.tagName || node.name || 'node').toLowerCase(),
+      tagName: String(node.tagName || node.tag || node.name || 'node').toLowerCase(),
       props: node.props || node.attributes || {},
       children: Array.isArray(node.children) ? node.children.map(normalizeVNode).filter(Boolean) : [],
       key: node.key ?? null
@@ -262,6 +330,7 @@
       newVNode: normalizeVNode(input.newVNode || input.nextVNode || input.currentVNode || null),
       patches: Array.isArray(input.patches) ? deepCopy(input.patches) : null,
       meta: {
+        ...(input.meta || {}),
         title: input.meta?.title || input.title,
         badge: input.meta?.badge || input.badge,
         eyebrow: input.meta?.eyebrow || input.eyebrow,
@@ -272,6 +341,414 @@
     };
 
     return normalized;
+  }
+
+  function detectJournalTree(vnode) {
+    const dayButtons = findAllVNodes(vnode, (candidate) => {
+      const day = candidate?.props?.['data-day'];
+      return candidate?.type === 'element' && JOURNAL_DAYS.includes(day);
+    });
+    return dayButtons.length >= 3;
+  }
+
+  function getActiveJournalDay(vnode) {
+    const buttons = findAllVNodes(vnode, (candidate) => {
+      const day = candidate?.props?.['data-day'];
+      return candidate?.type === 'element' && JOURNAL_DAYS.includes(day);
+    });
+
+    const activeButton = buttons.find((button) => {
+      const className = getClassName(button);
+      return className.includes('bg-primary') && className.includes('text-white');
+    });
+
+    return activeButton?.props?.['data-day'] || buttons[0]?.props?.['data-day'] || null;
+  }
+
+  function getJournalSectionSummary(vnode) {
+    const daytimeSection = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'daytime-section'));
+    const nightSection = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'night-section'));
+    const comparePanel = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'compare-panel'));
+    const daytimeList = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'daytime-list'));
+    const nightList = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'night-list'));
+
+    const daytimeItems = (daytimeList?.children || [])
+      .map((child) => getTextContent(child))
+      .filter(Boolean);
+    const nightItems = (nightList?.children || [])
+      .map((child) => getTextContent(child))
+      .filter(Boolean);
+    const compareText = getTextContent(comparePanel);
+
+    const sectionNode = daytimeSection || nightSection || comparePanel;
+    const tagName = sectionNode?.tagName || 'section';
+    const dataKey = sectionNode?.props?.['data-key'] ? ` data-key="${sectionNode.props['data-key']}"` : '';
+
+    return {
+      tagLabel: `<${tagName}${dataKey}>`,
+      text: shorten([daytimeItems[0], nightItems[0]].filter(Boolean).join(' | ') || compareText || '(text pending)', 260),
+      daytimeItems: daytimeItems.length ? daytimeItems : ['(none)'],
+      nightItems: nightItems.length ? nightItems : ['(none)']
+    };
+  }
+
+  function getJournalTitleText(vnode) {
+    const headerNode = findFirstVNode(vnode, (candidate) => hasNodeKey(candidate, 'header'));
+    const titleNode = findFirstVNode(headerNode || vnode, (candidate) => candidate?.tagName === 'h2');
+    const fallbackNode = findFirstVNode(headerNode || vnode, (candidate) => candidate?.tagName === 'h1');
+    return getTextContent(titleNode || fallbackNode || headerNode);
+  }
+
+  function createChangeEventSignature(type, day, value) {
+    return `${type}::${day || 'root'}::${value || ''}`;
+  }
+
+  function createElbowPath(startX, startY, laneX, endX, endY) {
+    return [
+      `M ${startX} ${startY}`,
+      `L ${laneX} ${startY}`,
+      `L ${laneX} ${endY}`,
+      `L ${endX} ${endY}`
+    ].join(' ');
+  }
+
+  function buildJournalChangeEvents(input, state, activeDay) {
+    const meta = input.meta || {};
+    if (meta.source !== 'patch-apply') {
+      return;
+    }
+
+    const oldSummary = input.oldVNode ? getJournalSectionSummary(input.oldVNode) : null;
+    const newSummary = input.newVNode ? getJournalSectionSummary(input.newVNode) : null;
+    const oldTitle = input.oldVNode ? getJournalTitleText(input.oldVNode) : '';
+    const newTitle = input.newVNode ? getJournalTitleText(input.newVNode) : '';
+
+    if (oldTitle !== newTitle && (oldTitle || newTitle)) {
+      const signature = createChangeEventSignature('title-edit', null, `${oldTitle}=>${newTitle}`);
+      if (!state.changeEventKeys.has(signature)) {
+        state.changeEventKeys.add(signature);
+        state.changeEvents.push({
+          type: 'title-edit',
+          parentType: 'root',
+          label: 'Title Edit',
+          signature,
+          detail: {
+            modalTitle: 'Title Edit',
+            rows: [
+              ['TYPE', 'TITLE EDIT'],
+              ['FROM', oldTitle],
+              ['TO', newTitle]
+            ],
+            textBlocks: [
+              { label: 'BEFORE', value: oldTitle },
+              { label: 'AFTER', value: newTitle }
+            ]
+          }
+        });
+      }
+    }
+
+    const day = activeDay || getActiveJournalDay(input.newVNode || input.oldVNode);
+    if (!day || !oldSummary || !newSummary) {
+      return;
+    }
+
+    const normalizeItems = (items = []) => items.filter((item) => item && item !== '(none)');
+
+    const collectAddedItems = (beforeItems = [], afterItems = []) => {
+      const counts = new Map();
+      normalizeItems(beforeItems).forEach((item) => counts.set(item, (counts.get(item) || 0) + 1));
+      const added = [];
+      normalizeItems(afterItems).forEach((item) => {
+        const nextCount = counts.get(item) || 0;
+        if (nextCount > 0) {
+          counts.set(item, nextCount - 1);
+        } else {
+          added.push(item);
+        }
+      });
+      return added;
+    };
+
+    const addedItems = [
+      ...collectAddedItems(oldSummary.daytimeItems, newSummary.daytimeItems).map((item) => ({ section: 'Daytime', item })),
+      ...collectAddedItems(oldSummary.nightItems, newSummary.nightItems).map((item) => ({ section: 'Night', item }))
+    ];
+
+    addedItems.forEach(({ section, item }) => {
+      const signature = createChangeEventSignature('schedule-add', day, `${section}:${item}`);
+      if (state.changeEventKeys.has(signature)) {
+        return;
+      }
+      state.changeEventKeys.add(signature);
+      state.changeEvents.push({
+        type: 'schedule-add',
+        parentType: 'day',
+        parentDay: day,
+        label: 'Schedule Add',
+        signature,
+        detail: {
+          modalTitle: `${day} ${section} Added`,
+          rows: [
+            ['TYPE', 'SCHEDULE ADD'],
+            ['DAY', `${day} (${JOURNAL_DAY_LABELS[day] || day})`],
+            ['SECTION', section]
+          ],
+          textBlocks: [
+            { label: 'LABEL', value: `${section} +` },
+            { label: 'ITEM', value: item }
+          ]
+        }
+      });
+    });
+  }
+
+  function createJournalNodeDetail(day, summary, isActive, visitedCount) {
+    return {
+      modalTitle: day ? `${day} Detail` : 'Weekly Travel Journal',
+      rows: day ? [
+        ['DAY', `${day} (${JOURNAL_DAY_LABELS[day] || day})`],
+        ['TAG', summary.tagLabel],
+        ['STATE', isActive ? 'ACTIVE' : 'VISITED']
+      ] : [
+        ['ROOT', 'Weekly Travel Journal'],
+        ['VISITED', `${visitedCount} days`],
+        ['FLOW', 'Root -> Title Edit / Day -> Schedule Add']
+      ],
+      textBlocks: day ? [
+        { label: 'TEXT', value: summary.text },
+        { label: 'DAYTIME', value: (summary.daytimeItems || ['(none)']).join('\n') },
+        { label: 'NIGHT', value: (summary.nightItems || ['(none)']).join('\n') }
+      ] : [
+        { label: 'SUMMARY', value: '요일을 누를 때마다 해당 요일 노드가 생성되고, 클릭하면 대표 영역 태그와 텍스트를 볼 수 있습니다.' }
+      ]
+    };
+  }
+
+  function createJournalModel(input, container) {
+    const sourceVNode = input.newVNode || input.oldVNode || null;
+    const previousVNode = input.oldVNode || null;
+    const activeDay = getActiveJournalDay(sourceVNode);
+    const canvasWidth = 1180;
+    const baseCanvasHeight = 440;
+    const titleRailWidth = 240;
+    const dayAreaWidth = canvasWidth - titleRailWidth;
+    const rootX = dayAreaWidth / 2;
+    const rootY = 92;
+    const dayY = 280;
+    const state = container
+      ? (journalStateByContainer.get(container) || { visitedDays: new Map(), changeEvents: [], changeEventKeys: new Set() })
+      : { visitedDays: new Map(), changeEvents: [], changeEventKeys: new Set() };
+
+    if (activeDay) {
+      state.visitedDays.set(activeDay, getJournalSectionSummary(sourceVNode));
+      if (container) {
+        journalStateByContainer.set(container, state);
+      }
+    }
+
+    buildJournalChangeEvents(input, state, activeDay);
+    if (container) {
+      journalStateByContainer.set(container, state);
+    }
+
+    const visitedDays = JOURNAL_DAYS.filter((day) => state.visitedDays.has(day));
+    const rootNode = {
+      id: 0,
+      x: rootX,
+      y: rootY,
+      width: 240,
+      label: 'Weekly Travel Journal',
+      variant: 'root',
+      path: 'root',
+      parentIndex: null,
+      depth: 0,
+      vnode: sourceVNode || previousVNode || { type: 'element', tagName: 'app-root', props: {}, children: [] },
+      isChanged: false,
+      detail: createJournalNodeDetail(null, null, false, visitedDays.length)
+    };
+
+    const dayNodes = visitedDays.map((day, index) => {
+      const count = visitedDays.length;
+      const leftPad = count >= 6 ? 78 : 104;
+      const rightPad = count >= 6 ? 64 : 92;
+      const usableWidth = dayAreaWidth - leftPad - rightPad;
+      const spacing = count === 1 ? 0 : usableWidth / Math.max(count - 1, 1);
+      const x = count === 1 ? rootX : leftPad + (spacing * index);
+      const summary = state.visitedDays.get(day);
+      const isActive = day === activeDay;
+      return {
+        id: index + 1,
+        x,
+        y: dayY,
+        width: count >= 6 ? 128 : 140,
+        label: `${day.slice(0, 3)} ${JOURNAL_DAY_LABELS[day] || day}`,
+        variant: isActive ? 'accent' : 'secondary',
+        path: `root > ${day}`,
+        parentIndex: 0,
+        depth: 1,
+        vnode: sourceVNode || previousVNode || { type: 'element', tagName: 'section', props: {}, children: [] },
+        isChanged: isActive,
+        detail: createJournalNodeDetail(day, summary, isActive, visitedDays.length)
+      };
+    });
+
+    const changeNodes = [];
+    const changeEdges = [];
+    const rootChangeEvents = state.changeEvents.filter((event) => event.parentType === 'root');
+    const titleColumnX = dayAreaWidth + (titleRailWidth / 2);
+    const titleParentY = dayY;
+    const titleEventStartY = titleParentY + 102;
+    const titleEventGapY = 82;
+
+    if (rootChangeEvents.length) {
+      const titleParentId = 'change-root-parent';
+      changeNodes.push({
+        id: titleParentId,
+        x: titleColumnX,
+        y: titleParentY,
+        width: 126,
+        label: 'Title Edit',
+        variant: 'secondary',
+        path: 'root > Title Edit',
+        parentIndex: 0,
+        depth: 1,
+        vnode: { type: 'element', tagName: 'change-group', props: {}, children: [] },
+        isChanged: true,
+        detail: {
+          modalTitle: 'Title Edit History',
+          rows: [
+            ['TYPE', 'TITLE EDIT HISTORY'],
+            ['COUNT', `${rootChangeEvents.length}`]
+          ],
+          textBlocks: rootChangeEvents.map((event, index) => ({
+            label: `EDIT ${index + 1}`,
+            value: `${event.detail?.rows?.[1]?.[1] || ''} -> ${event.detail?.rows?.[2]?.[1] || ''}`.trim()
+          }))
+        }
+      });
+      changeEdges.push({
+        x1: rootX,
+        y1: rootY + 24,
+        x2: titleColumnX,
+        y2: titleParentY - 24,
+        stroke: '#ce93d8',
+        width: 2.2
+      });
+    }
+
+    rootChangeEvents.forEach((event, index) => {
+      const x = titleColumnX;
+      const y = titleEventStartY + (titleEventGapY * index);
+      const nodeId = `change-root-${index}`;
+      changeNodes.push({
+        id: nodeId,
+        x,
+        y,
+        width: 118,
+        label: `Edit ${index + 1}`,
+        variant: 'secondary',
+        path: `root > Title Edit > Edit ${index + 1}`,
+        parentIndex: 'change-root-parent',
+        depth: 2,
+        vnode: { type: 'element', tagName: 'change-node', props: {}, children: [] },
+        isChanged: true,
+        detail: event.detail
+      });
+      changeEdges.push({
+        path: createElbowPath(
+          titleColumnX + 68,
+          titleParentY + 10,
+          titleColumnX + 94,
+          x + 60,
+          y - 22
+        ),
+        stroke: '#ce93d8',
+        width: 2.2
+      });
+    });
+
+    dayNodes.forEach((dayNode) => {
+      const relatedEvents = state.changeEvents.filter((event) => event.parentType === 'day' && event.parentDay === visitedDays[dayNode.id - 1]);
+      relatedEvents.forEach((event, index) => {
+        const x = dayNode.x;
+        const y = dayNode.y + 108 + (index * 82);
+        const nodeId = `change-day-${dayNode.id}-${index}`;
+        changeNodes.push({
+          id: nodeId,
+          x,
+          y,
+          width: 122,
+          label: `${event.label} ${index + 1}`,
+          variant: 'accent',
+          path: `${dayNode.path} > ${event.label} ${index + 1}`,
+          parentIndex: dayNode.id,
+          depth: 2,
+          vnode: { type: 'element', tagName: 'change-node', props: {}, children: [] },
+          isChanged: true,
+          detail: event.detail
+        });
+        changeEdges.push({
+          path: createElbowPath(
+            dayNode.x - 70,
+            dayNode.y + 8,
+            dayNode.x - 94,
+            x - 62,
+            y - 22
+          ),
+          stroke: '#0ff5ce',
+          width: 2
+        });
+      });
+    });
+
+    const edges = dayNodes.map((node) => ({
+      x1: rootX,
+      y1: rootY + 24,
+      x2: node.x,
+      y2: dayY - 26,
+      stroke: node.isChanged ? '#ffffff' : 'rgba(255, 255, 255, 0.88)',
+      width: node.isChanged ? 2.4 : 1.9
+    })).concat(changeEdges);
+
+    const lastRootEventY = rootChangeEvents.length
+      ? titleEventStartY + (titleEventGapY * (rootChangeEvents.length - 1))
+      : 0;
+    const lastDayEventY = dayNodes.reduce((maxY, dayNode) => {
+      const relatedCount = state.changeEvents.filter((event) => event.parentType === 'day' && event.parentDay === visitedDays[dayNode.id - 1]).length;
+      if (!relatedCount) {
+        return maxY;
+      }
+      return Math.max(maxY, dayNode.y + 108 + ((relatedCount - 1) * 82));
+    }, 0);
+    const canvasHeight = Math.max(
+      baseCanvasHeight,
+      changeNodes.length ? 560 : 0,
+      lastRootEventY ? lastRootEventY + 120 : 0,
+      lastDayEventY ? lastDayEventY + 120 : 0
+    );
+
+    return {
+      mode: 'journal',
+      eyebrow: input.meta?.eyebrow || 'Explorer / Weekly Flow',
+      title: input.meta?.title || 'VDOM Tree Explorer',
+      badge: activeDay ? `${JOURNAL_DAY_LABELS[activeDay] || activeDay} ACTIVE` : 'WAITING',
+      canvasWidth,
+      canvasHeight,
+      summaryCopy: input.meta?.summaryCopy || (
+        visitedDays.length
+          ? `방문한 요일 ${visitedDays.length}개를 누적해서 보여주고 있습니다. 현재 활성 요일은 ${activeDay || visitedDays[visitedDays.length - 1]} 입니다.`
+          : '새 탭에서 요일을 누르면 해당 요일 노드가 생성됩니다.'
+      ),
+      nodes: [rootNode, ...dayNodes, ...changeNodes],
+      edges,
+      patches: Array.isArray(input.patches) ? input.patches : [],
+      oldVNode: input.oldVNode,
+      newVNode: input.newVNode,
+      isEmpty: !visitedDays.length,
+      emptyStateTitle: input.meta?.emptyStateTitle || 'Day Nodes Pending',
+      emptyStateCopy: input.meta?.emptyStateCopy || '새 탭에서 요일을 클릭하면 해당 요일 노드가 아래에 추가됩니다.'
+    };
   }
 
   // 기본 adapter 등록 함수입니다.
@@ -508,6 +985,11 @@
   // 이 함수가 있으면 host는 입력 전달만 담당하고, diff/트리/요약 생성 책임은 모듈 내부에서 일관되게 처리할 수 있습니다.
   function createModel(inputOrOptions = {}) {
     const input = normalizeInput(inputOrOptions);
+    const container = inputOrOptions.__container || null;
+    const journalSource = input.newVNode || input.oldVNode;
+    if (journalSource && detectJournalTree(journalSource)) {
+      return createJournalModel(input, container);
+    }
     const oldVNode = input.oldVNode;
     const newVNode = input.newVNode || input.oldVNode;
     const patches = input.patches || diffVNodes(oldVNode, newVNode);
@@ -545,6 +1027,7 @@
     };
 
     return {
+      canvasWidth: 1000,
       eyebrow: meta.eyebrow || 'Explorer / Trees',
       title: meta.title || 'VDOM Tree Explorer',
       badge: meta.badge || (isEmpty ? 'WAITING' : getDominantPatchType(patches)),
@@ -633,6 +1116,12 @@
         height: 100%;
         min-height: 360px;
       }
+      .trees-module--journal .trees-module__canvas {
+        min-height: 460px;
+      }
+      .trees-module--journal .trees-module__svg {
+        min-height: 460px;
+      }
       .trees-module__empty {
         position: absolute;
         inset: 84px 20px 104px;
@@ -708,6 +1197,21 @@
       .trees-module__node-label--secondary {
         color: #8ceab9;
         border-color: rgba(105, 240, 174, 0.3);
+      }
+      .trees-module--journal .trees-module__node-label {
+        height: 46px;
+        border-radius: 14px;
+        font-size: 12px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+      }
+      .trees-module--journal .trees-module__node-label--root {
+        background: linear-gradient(180deg, rgba(79, 195, 247, 0.18), rgba(79, 195, 247, 0.08));
+      }
+      .trees-module--journal .trees-module__node-label--accent {
+        background: rgba(79, 195, 247, 0.14);
+      }
+      .trees-module--journal .trees-module__node-label--secondary {
+        background: rgba(105, 240, 174, 0.12);
       }
       .trees-module__node-label:hover {
         filter: brightness(1.06);
@@ -810,6 +1314,27 @@
   }
 
   function buildNodeModalMarkup(node = {}) {
+    if (node.detail) {
+      const rows = (node.detail.rows || [])
+        .map(([label, value]) => `<li><span class="trees-module__modal-label">${escapeHtml(label)}</span><span>${escapeHtml(String(value))}</span></li>`)
+        .join('');
+      const textBlocks = (node.detail.textBlocks || [])
+        .map((block) => `
+          <div class="trees-module__modal-props">
+            <div class="trees-module__modal-label">${escapeHtml(block.label)}</div>
+            <pre>${escapeHtml(block.value || '(empty)')}</pre>
+          </div>
+        `)
+        .join('');
+
+      return `
+        <div class="trees-module__modal-meta">
+          <ul>${rows}</ul>
+        </div>
+        ${textBlocks}
+      `;
+    }
+
     const vnode = node.vnode || {};
     const variant = vnode.type === 'text' ? 'text' : (vnode.tagName || 'element');
     const path = node.path || '';
@@ -846,11 +1371,15 @@
     const modal = root.querySelector('[data-trees-node-modal]');
     const modalBody = root.querySelector('[data-trees-node-modal-body]');
     const modalBackdrop = root.querySelector('[data-trees-node-modal-backdrop]');
+    const modalTitle = root.querySelector('[data-trees-node-modal-title]');
 
     if (!modal || !modalBody || !modalBackdrop) {
       return;
     }
 
+    if (modalTitle) {
+      modalTitle.textContent = node?.detail?.modalTitle || 'VNode Detail';
+    }
     modalBody.innerHTML = node ? buildNodeModalMarkup(node) : '<p>No node data.</p>';
     modalBackdrop.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
@@ -935,14 +1464,22 @@
       title: model.title || 'VDOM Tree Explorer',
       eyebrow: model.eyebrow || 'Explorer / Trees',
       badge: model.badge || 'WAITING',
-      isEmpty: Boolean(model.isEmpty)
+      isEmpty: Boolean(model.isEmpty),
+      mode: model.mode || 'default',
+      canvasHeight: model.canvasHeight || 620
     };
     const safeNodes = safeModel.nodes;
     const safeEdges = safeModel.edges;
+    const sectionClass = `trees-module${safeModel.mode === 'journal' ? ' trees-module--journal' : ''}`;
 
-    const edgeMarkup = safeEdges.map((edge) => `
+    const edgeMarkup = safeEdges.map((edge) => edge.path
+      ? `
+      <path class="trees-module__svg-line" d="${edge.path}" stroke="${edge.stroke}" stroke-width="${edge.width}" fill="none"></path>
+    `
+      : `
       <line class="trees-module__svg-line" x1="${edge.x1}" y1="${edge.y1}" x2="${edge.x2}" y2="${edge.y2}" stroke="${edge.stroke}" stroke-width="${edge.width}"></line>
-    `).join('');
+    `
+    ).join('');
 
     const nodeMarkup = safeNodes.map((node) => `
       <foreignObject width="${node.width || 118}" height="44" x="${node.x - ((node.width || 118) / 2)}" y="${node.y - 22}">
@@ -961,7 +1498,7 @@
     ` : '';
 
     return `
-      <section class="trees-module" data-trees-module-root>
+      <section class="${sectionClass}" data-trees-module-root>
         <header class="trees-module__header">
           <div class="trees-module__title-wrap">
             <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
@@ -972,7 +1509,7 @@
         </header>
         <div class="trees-module__body">
           <section class="trees-module__canvas">
-            <svg class="trees-module__svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <svg class="trees-module__svg" viewBox="0 0 ${safeModel.canvasWidth || 1000} ${safeModel.canvasHeight}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
               ${edgeMarkup}
               ${nodeMarkup}
             </svg>
@@ -980,7 +1517,7 @@
             <div class="trees-module__node-modal-backdrop" data-trees-node-modal-backdrop>
               <section class="trees-module__node-modal" role="dialog" aria-modal="true" aria-hidden="true" data-trees-node-modal>
                 <header class="trees-module__node-modal-head">
-                  <h3 class="trees-module__node-modal-title">VNode Detail</h3>
+                  <h3 class="trees-module__node-modal-title" data-trees-node-modal-title>VNode Detail</h3>
                   <button class="trees-module__node-modal-close" data-trees-node-modal-close type="button">Close</button>
                 </header>
                 <div class="trees-module__node-modal-meta" data-trees-node-modal-body></div>
@@ -1005,7 +1542,9 @@
       currentRoot.__treesCleanup = null;
     }
 
-    const model = Array.isArray(inputOrOptions.nodes) ? inputOrOptions : createModel(inputOrOptions);
+    const model = Array.isArray(inputOrOptions.nodes)
+      ? inputOrOptions
+      : createModel({ ...inputOrOptions, __container: container });
     ensureStyles();
     container.innerHTML = renderToString(model);
     const root = container.querySelector('[data-trees-module-root]');
