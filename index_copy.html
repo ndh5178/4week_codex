@@ -75,9 +75,9 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      max-width: 1960px;
+      max-width: 1600px;
       margin: 0 auto;
-      padding: 0 20px 72px;
+      padding: 0 16px 60px;
     }
 
     /* ── Header ── */
@@ -165,7 +165,7 @@
     #real-dom-iframe {
       flex: 1;
       width: 100%;
-      min-height: 420px;
+      min-height: 250px;
       border: none;
       background: #fff;
       border-radius: 0 0 var(--radius) var(--radius);
@@ -200,7 +200,7 @@
     #html-editor {
       flex: 1;
       width: 100%;
-      min-height: 420px;
+      min-height: 220px;
       background: #060910;
       color: var(--cyan);
       border: none;
@@ -214,6 +214,30 @@
       tab-size: 2;
     }
     #html-editor:focus { box-shadow: inset 0 0 0 1px var(--cyan-dim); }
+
+    .preview-sep {
+      height: 1px;
+      background: var(--border);
+      position: relative;
+    }
+    .preview-sep::after {
+      content: 'LIVE PREVIEW';
+      position: absolute;
+      left: 12px; top: -9px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      color: var(--text-muted);
+      background: var(--bg-panel);
+      padding: 0 6px;
+    }
+
+    #html-preview {
+      padding: 12px 14px;
+      min-height: 80px;
+      max-height: 160px;
+      overflow: auto;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
 
     /* ── Controls bar ── */
     .controls-bar {
@@ -360,17 +384,6 @@
       overflow: auto;
     }
 
-    .vdom-panels-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    #console-module-shell {
-      margin-top: 28px;
-      scroll-margin-top: 18px;
-    }
-
     /* ── Tree node ── */
     .tree-node { position: relative; padding-left: 14px; }
     .tree-node::before {
@@ -451,10 +464,6 @@
 </head>
 <body>
 <div id="app">
-  <div class="console-shell">
-    <div id="sidebar-mount"></div>
-
-    <main class="console-main">
 
   <!-- ── Header ── -->
   <header>
@@ -472,7 +481,7 @@
   <div class="main-split">
     <!-- Left: Real DOM (iframe) -->
     <div class="panel">
-      <div class="panel-header"><span class="dot dc"></span>실행 영역 — Live Preview</div>
+      <div class="panel-header"><span class="dot dc"></span>Real DOM — Patch 결과 렌더링</div>
       <iframe id="real-dom-iframe" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
     </div>
 
@@ -480,6 +489,8 @@
     <div class="panel right-panel">
       <div class="panel-header"><span class="dot dy"></span>HTML 편집기 — 수정 후 Patch 적용</div>
       <textarea id="html-editor" spellcheck="false"></textarea>
+      <div class="preview-sep"></div>
+      <div id="html-preview"></div>
     </div>
   </div>
 
@@ -494,7 +505,6 @@
   </div>
 
   <!-- ── Diff Log ── -->
-  <section class="vdom-panels-group">
   <div class="panel" style="margin-top: 0;">
     <div class="panel-header"><span class="dot db"></span>Diff 로그 패널</div>
     <div id="diff-log">
@@ -513,34 +523,20 @@
       <div class="vtree-body" id="vtree-new"></div>
     </div>
   </div>
-  </section>
 
-  <!-- ── Tab Log Panel ── -->
-  <div class="panel" id="tab-log-wrap" style="margin-top:0; display:none;">
-    <div class="panel-header">
-      <span class="dot" style="background:#f0c040;"></span>탭 로그
-      <button id="btn-clear-log" style="margin-left:auto; font-size:11px; padding:2px 8px; cursor:pointer;">지우기</button>
-    </div>
-    <div id="tab-log-list" style="font-size:12px; padding:8px; max-height:220px; overflow-y:auto; font-family:monospace;"></div>
-  </div>
-
-  <section id="console-module-shell">
-    <div id="console-module-shell-body"></div>
-  </section>
-
-    </main>
-  </div>
-
+  <div id="trees-mount"></div>
 </div>
 <div id="error-toast"></div>
-
 <script src="./trees.module.js"></script>
-<script src="./sidebar.module.js"></script>
 <script>
-window.SidebarModule.mount({
-  mountSelector: '#sidebar-mount',
-  treesScrollSelector: '#console-module-shell'
-});
+  window.TreesModule.renderInto(
+    document.getElementById('trees-mount'),
+    {
+      oldVNode,
+      newVNode,
+      patches
+    }
+  );
 </script>
 
 <script>
@@ -588,10 +584,9 @@ function domToVNode(node) {
 
   // 텍스트 노드 처리
   if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.textContent || '';
-    const normalized = text.trim();
-    if (!normalized) return null; // 공백 전용 텍스트 무시
-    return { type: 'text', text: normalized, key: null };
+    const text = node.textContent;
+    if (!text.trim()) return null; // 공백 전용 텍스트 무시
+    return { type: 'text', text, key: null };
   }
 
   // 주석 및 기타 노드 무시
@@ -622,15 +617,14 @@ function domToVNode(node) {
 /**
  * VNode를 실제 DOM 요소로 변환 (innerHTML 사용 금지)
  * @param {VNode} vnode
- * @param {Document} doc
  * @returns {Node}
  */
-function vnodeToDOM(vnode, doc = document) {
+function vnodeToDOM(vnode) {
   if (vnode.type === 'text') {
-    return doc.createTextNode(vnode.text);
+    return document.createTextNode(vnode.text);
   }
 
-  const el = doc.createElement(vnode.tagName);
+  const el = document.createElement(vnode.tagName);
 
   // 속성 설정
   for (const [k, v] of Object.entries(vnode.props || {})) {
@@ -642,7 +636,7 @@ function vnodeToDOM(vnode, doc = document) {
   // void 태그는 자식 없음
   if (!VOID_TAGS.has(vnode.tagName)) {
     for (const child of (vnode.children || [])) {
-      el.appendChild(vnodeToDOM(child, doc));
+      el.appendChild(vnodeToDOM(child));
     }
   }
 
@@ -811,10 +805,8 @@ function flashNode(el) {
  * @param {Object[]} patches
  */
 function patch(domRoot, patches) {
-  if (!domRoot || !patches || !patches.length) return domRoot;
+  if (!patches || !patches.length) return;
   const map = buildIndexMap(domRoot);
-  const doc = domRoot.ownerDocument || document;
-  let currentRoot = domRoot;
 
   for (const p of patches) {
     const target = map.get(p.index);
@@ -824,9 +816,8 @@ function patch(domRoot, patches) {
         if (!target) break;
         const parent = target.parentNode;
         if (!parent) break;
-        const neo = vnodeToDOM(p.newV, doc);
+        const neo = vnodeToDOM(p.newV);
         parent.replaceChild(neo, target);
-        if (target === currentRoot) currentRoot = neo;
         flashNode(neo);
         break;
       }
@@ -850,7 +841,7 @@ function patch(domRoot, patches) {
       }
       case 'INSERT': {
         // 삽입 대상 위치의 노드가 있으면 그 앞에, 없으면 부모 끝에 추가
-        const neo = vnodeToDOM(p.newV, doc);
+        const neo = vnodeToDOM(p.newV);
         if (target && target.parentNode) {
           target.parentNode.insertBefore(neo, target);
         } else {
@@ -875,8 +866,6 @@ function patch(domRoot, patches) {
       }
     }
   }
-
-  return currentRoot;
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -939,15 +928,6 @@ const history = {
 
   getCurrent() {
     return this.cursor >= 0 ? deepCopy(this.states[this.cursor]) : null;
-  },
-
-  replaceCurrent(vnode) {
-    if (this.cursor < 0) {
-      this.push(vnode);
-      return;
-    }
-    this.states[this.cursor] = deepCopy(vnode);
-    this._sync();
   },
 
   canUndo() { return this.cursor > 0; },
@@ -1170,41 +1150,6 @@ function renderTimeline() {
    ║  Section 10: 에러 토스트                             ║
    ╚═══════════════════════════════════════════════════════╝ */
 
-let treeExplorerActivated = false;
-
-function renderTreeExplorerIdleState() {
-  const host = document.getElementById('console-module-shell-body');
-  if (!host || !window.TreesModule) return;
-
-  window.TreesModule.renderInto(host, {
-    meta: {
-      title: 'VDOM Tree Explorer',
-      badge: 'IDLE',
-      summaryTitle: 'Explorer Status',
-      summaryCopy: 'Tree Explorer는 아직 비활성 상태입니다. "새 탭 열기" 버튼을 누르면 현재 VDOM을 기준으로 트리를 만들고, 이후 변경 사항을 실시간으로 반영합니다.',
-      emptyStateTitle: 'Tree Explorer Idle',
-      emptyStateCopy: '현재는 트리 데이터가 연결되지 않았습니다. 새 탭 열기 이후부터 생성된 VDOM과 변경 구조를 이 영역에 표시합니다.'
-    }
-  });
-}
-
-function renderSafeTrees(oldVNode, newVNode, patches, meta = {}) {
-  const host = document.getElementById('console-module-shell-body');
-  if (!host || !window.TreesModule) return;
-
-  if (!treeExplorerActivated) {
-    renderTreeExplorerIdleState();
-    return;
-  }
-
-  window.TreesModule.renderInto(host, {
-    oldVNode: oldVNode || null,
-    newVNode: newVNode || oldVNode || null,
-    patches: Array.isArray(patches) ? patches : [],
-    meta
-  });
-}
-
 let _toastTimer = null;
 function showError(msg) {
   const el = document.getElementById('error-toast');
@@ -1223,12 +1168,12 @@ function showError(msg) {
  * @param {VNode} vnode
  */
 function applyState(vnode) {
-  // 히스토리 이동 시에는 편집기/미리보기/실행 영역을 committed state로 맞춘다.
+  // 편집기 동기화 → updatePreview가 iframe + live preview 모두 업데이트
   const bodyHTML = vnodeToHTML(vnode);
-  setPreviewFromBodyHTML(bodyHTML);
-  updateIframe(toFullDoc(bodyHTML), 'committed');
+  document.getElementById('html-editor').value = bodyHTML;
+  updatePreview();
 
-  // 새 탭도 현재 committed state로 맞춘다.
+  // 새 탭 broadcast (iframe은 updatePreview에서 이미 처리됨)
   broadcastToTabs(buildFullDocument(bodyHTML));
 
   // 트리 초기화 (변경 없음)
@@ -1238,7 +1183,6 @@ function applyState(vnode) {
   // 로그 초기화
   document.getElementById('diff-log').innerHTML =
     '<div class="diff-empty">히스토리를 이동했습니다. Patch를 적용하면 변경사항이 표시됩니다.</div>';
-  renderSafeTrees(vnode, vnode, [], { source: 'history' });
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1247,19 +1191,19 @@ function applyState(vnode) {
 
 function updatePreview() {
   const editor = document.getElementById('html-editor');
-  const html = editor.value;
-  const parsed = parseHTML(html);
-
-  setPreviewFromBodyHTML(html, { syncEditor: false });
-  if (!parsed) return;
-
-  updateIframe(toFullDoc(html.trim()), 'draft');
-  if (treeExplorerActivated) {
-    const previewVNode = domToVNode(parsed.cloneNode(true));
-    const currentVNode = history.getCurrent();
-    const previewPatches = currentVNode ? diff(currentVNode, previewVNode) : [];
-    renderSafeTrees(currentVNode || previewVNode, previewVNode, previewPatches, { source: 'preview' });
+  const preview = document.getElementById('html-preview');
+  const parsed = parseHTML(editor.value);
+  preview.innerHTML = '';
+  if (parsed) {
+    preview.appendChild(parsed.cloneNode(true));
+    // iframe도 실시간 반영
+    updateIframe(toFullDoc(editor.value.trim()));
+  } else if (editor.value.trim()) {
+    preview.textContent = '⚠ 유효하지 않은 HTML';
+    preview.style.color = 'var(--red)';
+    return;
   }
+  preview.style.color = '';
 }
 
 /* ╔═══════════════════════════════════════════════════════╗
@@ -1290,49 +1234,12 @@ const DEFAULT_FILE_TEMPLATES = [
   { id: 'file-html1', name: 'html1.html', path: 'html1.html', type: 'path' },
   { id: 'file-html2', name: 'html2.html', path: 'html2.html', type: 'path' },
   { id: 'file-test', name: 'test.html', path: 'test.html', type: 'path' },
-  { id: 'file-weekly-travel-journal', name: 'Weekly Travel Journal.html', path: 'Weekly Travel Journal.html', type: 'path' },
 ];
 
 const openedTabs = [];
 let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
 let currentBodySuffix = '';
 const fileRegistry = new Map();
-let iframeObserver = null;
-let iframeSyncTimer = null;
-let iframeSyncMuted = false;
-let iframeSyncMuteDepth = 0;
-let iframeRenderMode = 'committed';
-let pendingIframeRenderMode = 'committed';
-
-function refreshIframeSyncMuteFlag() {
-  iframeSyncMuted = iframeSyncMuteDepth > 0;
-}
-
-function beginIframeSyncMute() {
-  iframeSyncMuteDepth++;
-  refreshIframeSyncMuteFlag();
-}
-
-function endIframeSyncMute(delay = 0) {
-  setTimeout(() => {
-    iframeSyncMuteDepth = Math.max(0, iframeSyncMuteDepth - 1);
-    refreshIframeSyncMuteFlag();
-  }, delay);
-}
-
-function withIframeSyncMuted(fn, releaseDelay = 0) {
-  beginIframeSyncMute();
-  try {
-    return fn();
-  } finally {
-    endIframeSyncMute(releaseDelay);
-  }
-}
-
-function setIframeRenderMode(mode) {
-  iframeRenderMode = mode;
-  pendingIframeRenderMode = mode;
-}
 
 function extractBodySuffix(bodyHTML) {
   const doc = new DOMParser().parseFromString('<body>' + bodyHTML + '</body>', 'text/html');
@@ -1379,142 +1286,27 @@ function buildFullDocument(bodyHTML) {
   return `<!DOCTYPE html>\n<html>\n<head><base href="${base}">${charsetTag}${currentDocHead}</head>\n<body>${bodyHTML}${suffix}</body>\n</html>`;
 }
 
-function queuePatchLogForTab(tabKey, payload) {
-  try {
-    const storageKey = `weekly-travel-journal-patch-log:${tabKey}`;
-    const current = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    current.push(payload);
-    localStorage.setItem(storageKey, JSON.stringify(current));
-  } catch (_) {
-    // ignore storage errors
-  }
-}
-
-function setPreviewFromBodyHTML(bodyHTML, { syncEditor = true } = {}) {
-  const editor = document.getElementById('html-editor');
-  const preview = document.getElementById('html-preview');
-  const parsed = parseHTML(bodyHTML);
-
-  if (syncEditor) editor.value = bodyHTML;
-  if (!preview) return;
-  preview.innerHTML = '';
-
-  if (!parsed) {
-    if (bodyHTML.trim()) {
-      preview.textContent = '유효하지 않은 HTML';
-      preview.style.color = 'var(--red)';
-    }
-    return;
-  }
-
-  preview.appendChild(parsed.cloneNode(true));
-  preview.style.color = '';
-}
-
-function handleIframeLoad() {
-  iframeRenderMode = pendingIframeRenderMode;
-  attachIframeObserver();
-  if (iframeRenderMode !== 'committed') return;
-  syncFromIframe(false);
-}
-
-function syncFromIframe(pushToHistory = false) {
-  const iframe = document.getElementById('real-dom-iframe');
-  const doc = iframe?.contentDocument;
-  const root = doc?.body?.firstElementChild;
-
-  if (!root) return;
-
-  const bodyHTML = root.outerHTML;
-  const parsed = parseHTML(bodyHTML);
-  if (!parsed) return;
-
-  const vnode = domToVNode(parsed);
-  const currentVNode = history.getCurrent();
-  const currentHTML = currentVNode ? vnodeToHTML(currentVNode) : '';
-
-  if (currentHTML === bodyHTML) return;
-
-  setPreviewFromBodyHTML(bodyHTML);
-  renderSafeTrees(currentVNode || vnode, vnode, [], { source: pushToHistory ? 'iframe-sync' : 'iframe-load' });
-
-  if (pushToHistory) {
-    // MutationObserver 경유 (사용자가 실행 영역 직접 수정)
-    renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
-    renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
-    document.getElementById('diff-log').innerHTML =
-      '<div class="diff-empty">실행 영역에서 발생한 DOM 변경을 현재 상태에 동기화했습니다.</div>';
-    history.push(vnode);
-  } else {
-    // handleIframeLoad 경유 (iframe 자동 재로딩)
-    // vtree/diff-log는 건드리지 않음 — 직전 patch/navigation 결과 보존
-    history.replaceCurrent(vnode);
-  }
-}
-
-function scheduleIframeSync(pushToHistory = true) {
-  clearTimeout(iframeSyncTimer);
-  iframeSyncTimer = setTimeout(() => {
-    syncFromIframe(pushToHistory);
-  }, 120);
-}
-
-function attachIframeObserver() {
-  const iframe = document.getElementById('real-dom-iframe');
-  const doc = iframe?.contentDocument;
-  const target = doc?.body;
-
-  if (iframeObserver) {
-    iframeObserver.disconnect();
-    iframeObserver = null;
-  }
-
-  if (!target) return;
-
-  iframeObserver = new MutationObserver(() => {
-    if (iframeSyncMuted || iframeRenderMode !== 'committed') return;
-    scheduleIframeSync(true);
-  });
-
-  iframeObserver.observe(target, {
-    childList: true,
-    subtree: true,
-    characterData: true,
-    attributes: true
-  });
-}
-
 function toFullDoc(htmlContent) {
   return /^\s*<!DOCTYPE|^\s*<html/i.test(htmlContent)
     ? htmlContent
     : buildFullDocument(htmlContent);
 }
 
-function updateIframe(fullDoc, renderMode = 'committed') {
+function updateIframe(fullDoc) {
   const iframe = document.getElementById('real-dom-iframe');
-  pendingIframeRenderMode = renderMode;
-  withIframeSyncMuted(() => {
-    iframe.srcdoc = fullDoc;
-  }, 300);
+  iframe.srcdoc = fullDoc;
 }
 
 function broadcastToTabs(fullDoc) {
   for (let i = openedTabs.length - 1; i >= 0; i--) {
-    const entry = openedTabs[i];
-    const tab = entry?.win;
-    if (!tab || tab.closed) {
+    if (openedTabs[i].closed) {
       openedTabs.splice(i, 1);
       continue;
     }
     try {
       const blob = new Blob([fullDoc], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-      tab.location.href = url;
-      try {
-        tab.name = `weekly-travel-journal-tab:${entry.key}`;
-      } catch (_) {
-        // ignore
-      }
+      openedTabs[i].location.href = url;
       setTimeout(() => URL.revokeObjectURL(url), 3000);
     } catch (_) {
       openedTabs.splice(i, 1);
@@ -1617,27 +1409,23 @@ function resetApp(content, isFullDoc) {
   history.cursor = -1;
   history.push(vnode);
 
-  setPreviewFromBodyHTML(bodyHTML);
   const fullDoc = buildFullDocument(bodyHTML);
-  updateIframe(fullDoc, 'committed');
+  updateIframe(fullDoc);
   broadcastToTabs(fullDoc);
 
   renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
   renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
-  renderSafeTrees(vnode, vnode, [], { source: 'reset' });
 
   document.getElementById('diff-log').innerHTML =
     '<div class="diff-empty">Patch를 적용하면 변경 사항이 여기에 표시됩니다.</div>';
+
+  updatePreview();
 }
 
 function init() {
   const editor = document.getElementById('html-editor');
   const selector = document.getElementById('file-selector');
   const folderInput = document.getElementById('folder-input');
-  const iframe = document.getElementById('real-dom-iframe');
-
-  iframe.addEventListener('load', handleIframeLoad);
-  renderTreeExplorerIdleState();
 
   // ── 파일 셀렉터 초기화 ──
   registerDefaultTemplates();
@@ -1694,44 +1482,18 @@ function init() {
     // 변경 인덱스 수집 (트리 하이라이트용)
     const changedIdx = new Set(patches.map(p => p.index));
 
+    // editor 동기화 → iframe + live preview + 새 탭 업데이트
     const bodyHTML = vnodeToHTML(newVNode);
-    setPreviewFromBodyHTML(bodyHTML);
+    editor.value = bodyHTML;
+    updatePreview();
+    broadcastToTabs(buildFullDocument(bodyHTML));
 
     // VTree 업데이트 (변경 노드 하이라이트)
     renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
     renderVTree(newVNode, changedIdx,  document.getElementById('vtree-new'));
-    treeExplorerActivated = true;
-    renderSafeTrees(oldVNode, newVNode, patches, { source: 'patch-apply' });
 
-    if (patches.length) {
-      history.push(newVNode);
-      broadcastToTabs(buildFullDocument(bodyHTML));
-      const patchPayload = {
-        type: 'external-patch-applied',
-        source: 'main-demo',
-        oldTree: deepCopy(oldVNode),
-        newTree: deepCopy(newVNode),
-        operations: deepCopy(patches),
-        appliedAt: new Date().toISOString()
-      };
-
-      for (let i = openedTabs.length - 1; i >= 0; i--) {
-        const entry = openedTabs[i];
-        const tab = entry?.win;
-        if (!tab || tab.closed) {
-          openedTabs.splice(i, 1);
-          continue;
-        }
-        try {
-          queuePatchLogForTab(entry.key, patchPayload);
-          tab.postMessage(patchPayload, '*');
-        } catch (_) {
-          openedTabs.splice(i, 1);
-        }
-      }
-    }
-
-    setIframeRenderMode('committed');
+    // 히스토리 저장
+    history.push(newVNode);
   });
 
   // ↗ 새 탭에서 열기
@@ -1740,21 +1502,11 @@ function init() {
     if (!currentVNode) return;
     const bodyHTML = vnodeToHTML(currentVNode);
     const fullDoc = buildFullDocument(bodyHTML);
-    const tabKey = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const blob = new Blob([fullDoc], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const tab = window.open(url, '_blank');
-    if (tab) {
-      try {
-        tab.name = `weekly-travel-journal-tab:${tabKey}`;
-      } catch (_) {
-        // ignore
-      }
-      openedTabs.push({ win: tab, key: tabKey });
-    }
+    if (tab) { openedTabs.push(tab); }
     setTimeout(() => URL.revokeObjectURL(url), 3000);
-    treeExplorerActivated = true;
-    renderSafeTrees(currentVNode, currentVNode, [], { source: 'new-tab' });
   });
 
   // ◀ 뒤로가기
@@ -1771,43 +1523,6 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-// ── 탭 로그 수신 ──
-window.addEventListener('message', (e) => {
-  if (!e.data || e.data.type !== 'vdom-log') return;
-  const { oldTree, newTree, operations } = e.data;
-  const wrap = document.getElementById('tab-log-wrap');
-  const list = document.getElementById('tab-log-list');
-  wrap.style.display = '';
-  list.innerHTML = '';
-
-  const side = (label, data) => {
-    const el = document.createElement('div');
-    el.style.cssText = 'flex:1; min-width:0;';
-    el.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">${label}</div>`
-      + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto;">${JSON.stringify(data, null, 2)}</pre>`;
-    return el;
-  };
-
-  const row = document.createElement('div');
-  row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px;';
-  row.appendChild(side('Old Tree', oldTree));
-  row.appendChild(side('New Tree', newTree));
-  list.appendChild(row);
-
-  const opsEl = document.createElement('div');
-  opsEl.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">Operations Array</div>`
-    + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto;">${JSON.stringify(operations, null, 2)}</pre>`;
-  list.appendChild(opsEl);
-
-  treeExplorerActivated = true;
-  renderSafeTrees(oldTree, newTree, operations || [], { source: 'message' });
-});
-
-document.getElementById('btn-clear-log').addEventListener('click', () => {
-  document.getElementById('tab-log-list').innerHTML = '';
-  document.getElementById('tab-log-wrap').style.display = 'none';
-});
 </script>
 </body>
 </html>
