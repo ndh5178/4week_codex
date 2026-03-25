@@ -388,6 +388,7 @@
       const reasonInfo = document.querySelector("[data-render-reason]");
       if (modeInfo) modeInfo.textContent = `${mode} | DOM 변경 ${domUpdates}회 | ${duration.toFixed(3)}ms`;
       if (reasonInfo) reasonInfo.textContent = reason;
+
     }
 
     function logVirtualDomTrees(oldTree, newTree, operations = []) {
@@ -398,6 +399,15 @@
         console.table(operations);
       } else {
         console.log("DOM 변경 작업", "변경 사항 없음");
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'vdom-log',
+          oldTree,
+          newTree,
+          operations
+        }, '*');
       }
       console.groupEnd();
     }

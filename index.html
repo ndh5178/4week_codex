@@ -524,6 +524,15 @@
     </div>
   </div>
 
+  <!-- ── Tab Log Panel ── -->
+  <div class="panel" id="tab-log-wrap" style="margin-top:0; display:none;">
+    <div class="panel-header">
+      <span class="dot" style="background:#f0c040;"></span>탭 로그
+      <button id="btn-clear-log" style="margin-left:auto; font-size:11px; padding:2px 8px; cursor:pointer;">지우기</button>
+    </div>
+    <div id="tab-log-list" style="font-size:12px; padding:8px; max-height:220px; overflow-y:auto; font-family:monospace;"></div>
+  </div>
+
 </div>
 <div id="error-toast"></div>
 
@@ -1617,6 +1626,40 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ── 탭 로그 수신 ──
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'vdom-log') return;
+  const { oldTree, newTree, operations } = e.data;
+  const wrap = document.getElementById('tab-log-wrap');
+  const list = document.getElementById('tab-log-list');
+  wrap.style.display = '';
+  list.innerHTML = '';
+
+  const side = (label, data) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'flex:1; min-width:0;';
+    el.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">${label}</div>`
+      + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto;">${JSON.stringify(data, null, 2)}</pre>`;
+    return el;
+  };
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px;';
+  row.appendChild(side('Old Tree', oldTree));
+  row.appendChild(side('New Tree', newTree));
+  list.appendChild(row);
+
+  const opsEl = document.createElement('div');
+  opsEl.innerHTML = `<div style="color:#f0c040; margin-bottom:2px;">Operations Array</div>`
+    + `<pre style="margin:0; color:#ccc; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto;">${JSON.stringify(operations, null, 2)}</pre>`;
+  list.appendChild(opsEl);
+});
+
+document.getElementById('btn-clear-log').addEventListener('click', () => {
+  document.getElementById('tab-log-list').innerHTML = '';
+  document.getElementById('tab-log-wrap').style.display = 'none';
+});
 </script>
 </body>
 </html>
