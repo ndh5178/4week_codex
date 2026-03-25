@@ -425,43 +425,11 @@ Check values:
 - `decision.useFullReload === false`
 - `renderMode === "Virtual DOM Patch"`
 
-### Scenario 2: Wednesday -> Thursday updates shared layout
+### Scenario 2: Entering Thursday 10,000 mode uses full reload
 
 ```mermaid
 flowchart TD
-    A["Scenario 2 button"] --> B["resetDemoState(activeDay=Wednesday)"]
-    B --> C["setActiveDay('Thursday')"]
-    C --> D["renderApp()"]
-    D --> E["applyDaySpecificContent(baseTree, day)"]
-    E --> F["syncDayButtons(nav, day)"]
-    E --> G["replace city text and list data"]
-    F --> H["render()"]
-    G --> H
-    H --> I["useFullReload = false"]
-    I --> J["patchNode(...)"]
-```
-
-```js
-function applyDaySpecificContent(baseTree, day) {
-  const currentSchedule = getScheduleData(day);
-  const header = findNodeByKey(baseTree, "header");
-  const nav = findNodeByKey(baseTree, "nav");
-  const daytimeList = findNodeByKey(baseTree, "daytime-list");
-  const nightList = findNodeByKey(baseTree, "night-list");
-}
-```
-
-Check values:
-
-- `useFullReload === false`
-- shared layout stays the same
-- city text and list contents change
-
-### Scenario 3: Entering Thursday 10,000 mode uses full reload
-
-```mermaid
-flowchart TD
-    A["Scenario 3 button"] --> B["resetDemoState(activeDay=Thursday, massive=false)"]
+    A["Scenario 2 button"] --> B["resetDemoState(activeDay=Thursday, massive=false)"]
     B --> C["toggleThursdayMassiveMode()"]
     C --> D["state.thursdayMassiveMode = true"]
     D --> E["render()"]
@@ -488,11 +456,11 @@ Check values:
 - `decision.nextProfile === "thursday-massive"`
 - `decision.useFullReload === true`
 
-### Scenario 4: Thursday massive -> Friday massive uses keyed patch
+### Scenario 3: Thursday massive -> Friday massive uses keyed patch
 
 ```mermaid
 flowchart TD
-    A["Scenario 4 button"] --> B["resetDemoState(Thursday massive, Friday massive)"]
+    A["Scenario 3 button"] --> B["resetDemoState(Thursday massive, Friday massive)"]
     B --> C["setActiveDay('Friday')"]
     C --> D["render()"]
     D --> E["decideRenderStrategy()"]

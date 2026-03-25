@@ -174,9 +174,8 @@
         </div>
         <div class="flex flex-wrap gap-2" data-whitebox-scenario-buttons="true">
           <button type="button" data-whitebox-scenario="general-patch" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">1. Patch</button>
-          <button type="button" data-whitebox-scenario="structure-patch" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">2. Shared Layout</button>
-          <button type="button" data-whitebox-scenario="enter-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">3. Full Reload</button>
-          <button type="button" data-whitebox-scenario="massive-to-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">4. Keyed Patch</button>
+          <button type="button" data-whitebox-scenario="enter-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">2. Full Reload</button>
+          <button type="button" data-whitebox-scenario="massive-to-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">3. Keyed Patch</button>
         </div>
       </div>
 
@@ -257,23 +256,8 @@
           }
         ]
       },
-      "structure-patch": {
-        title: "Scenario 2",
-        subtitle: "Wednesday -> Thursday keeps the shared structure and patches only the changed data",
-        setup: {
-          activeDay: "Wednesday",
-          thursdayMassiveMode: false,
-          fridayMassiveMode: false
-        },
-        steps: [
-          {
-            label: "Wednesday -> Thursday",
-            action: () => setActiveDay("Thursday")
-          }
-        ]
-      },
       "enter-massive": {
-        title: "Scenario 3",
+        title: "Scenario 2",
         subtitle: "Entering Thursday 10,000 mode uses full reload",
         setup: {
           activeDay: "Thursday",
@@ -288,7 +272,7 @@
         ]
       },
       "massive-to-massive": {
-        title: "Scenario 4",
+        title: "Scenario 3",
         subtitle: "Thursday massive -> Friday massive stays in keyed patch mode",
         setup: {
           activeDay: "Thursday",
