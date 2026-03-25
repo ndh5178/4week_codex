@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html class="light" lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Travel Journal | Mono Accent Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            background: "#ffffff",
+            "on-background": "#1a1a1a",
+            surface: "#fcfcfc",
+            "on-surface": "#1a1a1a",
+            primary: "#1A1C1E",
+            "on-primary": "#ffffff",
+            outline: "#e5e5e5",
+            accent: "#717171"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "serif"],
+            sans: ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #ffffff;
+      color: #1A1C1E;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #e5e5e5;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="font-sans">
+  <div id="app-host">
+    <div id="app-root" class="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 bg-background" data-key="app-root">
+      <div class="max-w-5xl w-full" data-key="page-shell">
+        <header class="text-center mb-16" data-key="header">
+          <h1 class="font-serif italic text-xs tracking-[0.4em] uppercase text-accent mb-6">The Traveler's Notebook</h1>
+          <h2 class="font-serif text-5xl md:text-6xl font-normal tracking-tight text-primary">Weekly Travel Journal</h2>
+          <p class="mt-6 text-sm tracking-[0.28em] uppercase text-accent/70 font-medium">Seoul</p>
+        </header>
+
+        <nav class="mb-12" data-key="nav">
+          <div class="flex justify-center items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto py-4 no-scrollbar">
+            <button type="button" data-day="Monday" data-key="day-Monday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-primary border-primary text-white shadow-lg">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Mon</span>
+                <span class="text-lg font-serif italic leading-none">월</span>
+              </div>
+              <span class="absolute -bottom-2 w-1 h-1 bg-primary rounded-full"></span>
+            </button>
+            <button type="button" data-day="Tuesday" data-key="day-Tuesday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Tue</span>
+                <span class="text-lg font-serif italic leading-none">화</span>
+              </div>
+            </button>
+            <button type="button" data-day="Wednesday" data-key="day-Wednesday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Wed</span>
+                <span class="text-lg font-serif italic leading-none">수</span>
+              </div>
+            </button>
+            <button type="button" data-day="Thursday" data-key="day-Thursday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Thu</span>
+                <span class="text-lg font-serif italic leading-none">목</span>
+              </div>
+            </button>
+            <button type="button" data-day="Friday" data-key="day-Friday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Fri</span>
+                <span class="text-lg font-serif italic leading-none">금</span>
+              </div>
+            </button>
+            <button type="button" data-day="Saturday" data-key="day-Saturday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Sat</span>
+                <span class="text-lg font-serif italic leading-none">토</span>
+              </div>
+            </button>
+            <button type="button" data-day="Sunday" data-key="day-Sunday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Sun</span>
+                <span class="text-lg font-serif italic leading-none">일</span>
+              </div>
+            </button>
+          </div>
+        </nav>
+
+        <section class="mb-12 rounded-2xl border border-outline/70 bg-surface px-5 py-4 text-center" data-key="compare-panel">
+          <p class="text-[11px] uppercase tracking-[0.35em] text-accent/70 font-medium mb-3">렌더링 비교</p>
+          <p class="text-sm text-primary/80 leading-relaxed mb-2">기본 요일 이동은 Virtual DOM Patch를 사용합니다. 목요일과 금요일은 10,000개 데이터가 처음 등장할 때만 한 번 전체 DOM을 만들고, 그 이후 재방문은 key + Map 기반 Patch를 사용합니다.</p>
+          <p class="text-sm font-medium text-primary mb-2" data-render-info="true">초기 렌더링 | DOM 변경 0회 | 0.000ms</p>
+          <p class="text-xs text-accent/80 leading-relaxed" data-render-reason="true">초기 DOM을 읽어서 Virtual DOM으로 만들었습니다.</p>
+        </section>
+
+        <section class="mb-12 flex flex-col items-center gap-4 rounded-2xl border border-outline/70 bg-white px-5 py-4" data-key="massive-panel">
+          <p class="text-sm text-primary/85 text-center leading-relaxed">목요일과 금요일은 각각 독립적으로 10,000개 데이터를 켤 수 있습니다. 소량 요일에서 큰 구조로 처음 들어갈 때만 전체 교체가 일어나고, 이후 같은 큰 요일을 다시 볼 때는 Patch가 사용됩니다.</p>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button type="button" data-thursday-massive-toggle="true" data-key="toggle-thursday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">목요일 10,000개 데이터 켜기</button>
+            <button type="button" data-friday-massive-toggle="true" data-key="toggle-friday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">금요일 10,000개 데이터 켜기</button>
+          </div>
+        </section>
+
+        <main class="grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]" data-key="main">
+          <section class="flex flex-col text-center" data-key="daytime-section">
+            <div class="mb-8 relative">
+              <h3 class="font-serif italic text-3xl text-primary mb-2">Daytime</h3>
+              <div class="w-12 h-[1px] bg-outline mx-auto mb-3"></div>
+              <p class="text-[11px] tracking-[0.2em] text-accent font-medium uppercase">09:00 ~ 17:00</p>
+            </div>
+            <ul class="space-y-4 text-left max-h-[340px] overflow-y-auto px-2" data-key="daytime-list">
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-0" data-stop-index="0">성수동 베이커리 골목 산책</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-1" data-stop-index="1">서울숲 자전거 코스 한 바퀴</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-2" data-stop-index="2">북카페에서 첫날 여행 메모 정리</li>
+            </ul>
+          </section>
+
+          <section class="flex flex-col text-center" data-key="night-section">
+            <div class="mb-8 relative">
+              <h3 class="font-serif italic text-3xl text-primary mb-2">Night</h3>
+              <div class="w-12 h-[1px] bg-outline mx-auto mb-3"></div>
+              <p class="text-[11px] tracking-[0.2em] text-accent font-medium uppercase">18:00 ~ 23:00</p>
+            </div>
+            <ul class="space-y-4 text-left max-h-[340px] overflow-y-auto px-2" data-key="night-list">
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-0" data-stop-index="0">남산 타워 야경 감상</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-1" data-stop-index="1">종로 포장마차 거리에서 저녁</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-2" data-stop-index="2">한강 피크닉으로 첫날 마무리</li>
+            </ul>
+          </section>
+        </main>
+
+        <footer class="mt-24 pt-12 border-t border-outline/30 text-center" data-key="footer">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-accent/60 font-medium">Open the developer console to compare patch and full reload logs</p>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MASSIVE_ITEM_COUNT = 10000;
+
+    const WEEKLY_DATA = {
+      Monday: { ko: "월", city: "Seoul", daytime: ["성수동 베이커리 골목 산책", "서울숲 자전거 코스 한 바퀴", "북카페에서 첫날 여행 메모 정리"], night: ["남산 타워 야경 감상", "종로 포장마차 거리에서 저녁", "한강 피크닉으로 첫날 마무리"] },
+      Tuesday: { ko: "화", city: "Busan", daytime: ["해운대 해변 산책", "블루라인파크 캡슐열차 탑승", "광안리 브런치 카페 방문"], night: ["광안대교 야경 감상", "민락수변공원에서 야식과 바다 구경", "부산 밤바람 따라 산책하며 마무리"] },
+      Wednesday: { ko: "수", city: "Jeonju", daytime: ["전주 한옥마을 골목 산책", "수제 공예 상점 구경", "경기전 앞에서 기념 사진 촬영"], night: ["남부시장 야시장 탐방", "전통찻집에서 한식 디저트 즐기기", "고즈넉한 한옥 스테이 체크인"] },
+      Thursday: { ko: "목", city: "Gangneung", daytime: ["안목해변 커피거리 브런치", "강문해변 산책", "소품숍과 독립서점 둘러보기"], night: ["바닷가 일몰 감상", "초당 순두부 거리에서 저녁 식사", "숙소에서 파도 소리 들으며 휴식"] },
+      Friday: { ko: "금", city: "Jeju", daytime: ["섭지코지 해안 드라이브", "오름 가벼운 트레킹", "감귤 디저트 카페 방문"], night: ["애월 해안도로 노을 감상", "흑돼지 저녁 식사", "별 보이는 숙소 테라스에서 휴식"] },
+      Saturday: { ko: "토", city: "Gyeongju", daytime: ["대릉원 산책", "황리단길 카페 탐방", "첨성대 주변 자전거 라이딩"], night: ["동궁과 월지 야경 감상", "한옥 바에서 전통주 한잔", "고도 분위기를 느끼며 산책"] },
+      Sunday: { ko: "일", city: "Incheon", daytime: ["차이나타운 거리 산책", "개항장 근대 건축물 구경", "월미도 바다열차 체험"], night: ["송도 센트럴파크 야경 보기", "인하대 앞 거리에서 마지막 저녁", "공항 가기 전 여행 사진 정리"] }
+    };
+
+    const DAYS = Object.keys(WEEKLY_DATA);
+    const state = {
+      activeDay: "Monday",
+      thursdayMassiveMode: false,
+      fridayMassiveMode: false,
+      hasMountedMassiveThursday: false,
+      hasMountedMassiveFriday: false,
+      lastRenderedProfile: "normal",
+      lastRenderMode: "초기 렌더링",
+      lastDuration: 0,
+      lastDomUpdates: 0,
+      lastReason: "초기 DOM을 읽어서 Virtual DOM으로 만들었습니다."
+    };
+
+    const appHost = document.getElementById("app-host");
+    let currentTree = null;
+
+    function buildBulkStops(city, prefix, count) {
+      return Array.from({ length: count }, (_, index) => `${city} ${prefix} ${index + 1}`);
+    }
+
+    function getScheduleData(day) {
+      const base = WEEKLY_DATA[day];
+      if (state.thursdayMassiveMode && day === "Thursday") {
+        return { ...base, city: `${base.city} Massive Thursday`, daytime: buildBulkStops(base.city, "낮 일정", MASSIVE_ITEM_COUNT), night: buildBulkStops(base.city, "밤 일정", MASSIVE_ITEM_COUNT) };
+      }
+      if (state.fridayMassiveMode && day === "Friday") {
+        return { ...base, city: `${base.city} Massive Friday`, daytime: buildBulkStops(base.city, "낮 일정", MASSIVE_ITEM_COUNT), night: buildBulkStops(base.city, "밤 일정", MASSIVE_ITEM_COUNT) };
+      }
+      return base;
+    }
+
+    function createStats() {
+      return { domUpdates: 0 };
+    }
+
+    function logRender(mode, duration, domUpdates, day, reason) {
+      state.lastRenderMode = mode;
+      state.lastDuration = duration;
+      state.lastDomUpdates = domUpdates;
+      state.lastReason = reason;
+
+      console.clear();
+      console.log("[여행 일정 VDOM 데모]");
+      console.log("선택한 요일:", day);
+      console.log("렌더링 방식:", mode);
+      console.log("DOM 변경 횟수:", domUpdates);
+      console.log("걸린 시간:", `${duration.toFixed(3)}ms`);
+      console.log("선택 이유:", reason);
+
+      const modeInfo = document.querySelector("[data-render-info]");
+      const reasonInfo = document.querySelector("[data-render-reason]");
+      if (modeInfo) modeInfo.textContent = `${mode} | DOM 변경 ${domUpdates}회 | ${duration.toFixed(3)}ms`;
+      if (reasonInfo) reasonInfo.textContent = reason;
+    }
+
+    function h(tag, props = {}, ...children) {
+      const normalizedProps = { ...props };
+      const key = normalizedProps.key ?? normalizedProps["data-key"] ?? null;
+      delete normalizedProps.key;
+      return {
+        type: "ELEMENT",
+        tag,
+        key,
+        props: normalizedProps,
+        children: children.flat().map((child) => {
+          if (child === null || child === undefined || child === false) return null;
+          return typeof child === "object" ? child : { type: "TEXT", value: String(child), key: null };
+        }).filter(Boolean)
+      };
+    }
+
+    function domToVNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return { type: "TEXT", value: node.nodeValue || "", key: null };
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+      }
+
+      const props = {};
+      for (const attr of Array.from(node.attributes)) {
+        props[attr.name === "class" ? "className" : attr.name] = attr.value;
+      }
+
+      const children = Array.from(node.childNodes)
+        .map(domToVNode)
+        .filter((child) => child && !(child.type === "TEXT" && child.value.trim() === ""));
+
+      return {
+        type: "ELEMENT",
+        tag: node.tagName.toLowerCase(),
+        key: node.getAttribute("data-key"),
+        props,
+        children
+      };
+    }
+
+    function createDomNode(vnode, stats) {
+      if (vnode.type === "TEXT") {
+        stats.domUpdates += 1;
+        return document.createTextNode(vnode.value);
+      }
+
+      const element = document.createElement(vnode.tag);
+      stats.domUpdates += 1;
+
+      if (vnode.key !== null && vnode.key !== undefined) {
+        element.setAttribute("data-key", vnode.key);
+      }
+
+      updateProps(element, {}, vnode.props, stats);
+      vnode.children.forEach((child) => element.appendChild(createDomNode(child, stats)));
+      return element;
+    }
+
+    function updateProps(element, oldProps, newProps, stats) {
+      Object.keys(oldProps).forEach((key) => {
+        if (key === "data-key") return;
+        if (!(key in newProps)) removeProp(element, key, stats);
+      });
+
+      Object.entries(newProps).forEach(([key, value]) => {
+        if (key === "data-key") return;
+        if (oldProps[key] !== value) setProp(element, key, value, stats);
+      });
+    }
+
+    function setProp(element, key, value, stats) {
+      stats.domUpdates += 1;
+      if (key === "className") {
+        element.setAttribute("class", value);
+        return;
+      }
+      if (value === true) {
+        element.setAttribute(key, "");
+        return;
+      }
+      if (value === false || value === null || value === undefined) {
+        removeProp(element, key, stats);
+        return;
+      }
+      element.setAttribute(key, value);
+    }
+
+    function removeProp(element, key, stats) {
+      stats.domUpdates += 1;
+      if (key === "className") {
+        element.removeAttribute("class");
+        return;
+      }
+      element.removeAttribute(key);
+    }
+
+    function hasNodeChanged(oldNode, newNode) {
+      if (!oldNode || !newNode) return true;
+      if (oldNode.type !== newNode.type) return true;
+      if (oldNode.type === "TEXT" && newNode.type === "TEXT") return false;
+      return oldNode.tag !== newNode.tag;
+    }
+
+    function getNodeKey(vnode, fallbackIndex) {
+      if (!vnode || vnode.type === "TEXT") return null;
+      return vnode.key !== null && vnode.key !== undefined ? vnode.key : `__index_${fallbackIndex}`;
+    }
+
+    function childrenHaveKeys(children) {
+      return children.some((child) => child && child.type === "ELEMENT" && child.key !== null && child.key !== undefined);
+    }
+
+    function hasStableKeyOrder(oldChildren, newChildren) {
+      if (oldChildren.length !== newChildren.length) {
+        return false;
+      }
+
+      for (let index = 0; index < oldChildren.length; index += 1) {
+        if (getNodeKey(oldChildren[index], index) !== getNodeKey(newChildren[index], index)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function getComparableChildNodes(parent) {
+      return Array.from(parent.childNodes).filter((node) => {
+        return !(node.nodeType === Node.TEXT_NODE && (node.nodeValue || "").trim() === "");
+      });
+    }
+
+    function patchNode(parent, existingNode, oldNode, newNode, stats) {
+      if (!oldNode && newNode) {
+        const createdNode = createDomNode(newNode, stats);
+        if (parent) parent.appendChild(createdNode);
+        return createdNode;
+      }
+
+      if (oldNode && !newNode) {
+        if (parent && existingNode) {
+          parent.removeChild(existingNode);
+          stats.domUpdates += 1;
+        }
+        return null;
+      }
+
+      if (hasNodeChanged(oldNode, newNode)) {
+        const replacement = createDomNode(newNode, stats);
+        if (parent && existingNode) {
+          parent.replaceChild(replacement, existingNode);
+          stats.domUpdates += 1;
+        }
+        return replacement;
+      }
+
+      if (newNode.type === "TEXT") {
+        if (oldNode.value !== newNode.value) {
+          existingNode.nodeValue = newNode.value;
+          stats.domUpdates += 1;
+        }
+        return existingNode;
+      }
+
+      if (newNode.key !== null && newNode.key !== undefined) {
+        existingNode.setAttribute("data-key", newNode.key);
+      }
+
+      updateProps(existingNode, oldNode.props, newNode.props, stats);
+      patchChildren(existingNode, oldNode.children, newNode.children, stats);
+      return existingNode;
+    }
+
+    function patchChildren(parent, oldChildren, newChildren, stats) {
+      const useKeyedDiff = childrenHaveKeys(oldChildren) || childrenHaveKeys(newChildren);
+
+      if (!useKeyedDiff) {
+        const oldDomChildren = getComparableChildNodes(parent);
+        const maxLength = Math.max(oldChildren.length, newChildren.length);
+        for (let index = 0; index < maxLength; index += 1) {
+          patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+        }
+        return;
+      }
+
+      const oldDomChildren = getComparableChildNodes(parent);
+
+      if (hasStableKeyOrder(oldChildren, newChildren)) {
+        for (let index = 0; index < newChildren.length; index += 1) {
+          patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+        }
+        return;
+      }
+
+      const oldMap = new Map();
+      const usedKeys = new Set();
+      const desiredDomOrder = [];
+
+      oldChildren.forEach((child, index) => {
+        const key = getNodeKey(child, index);
+        if (key !== null) {
+          oldMap.set(key, { node: child, domNode: oldDomChildren[index] });
+        }
+      });
+
+      newChildren.forEach((newChild, index) => {
+        const key = getNodeKey(newChild, index);
+        if (key !== null && oldMap.has(key)) {
+          const matched = oldMap.get(key);
+          const patchedDom = patchNode(parent, matched.domNode, matched.node, newChild, stats);
+          desiredDomOrder.push(patchedDom);
+          usedKeys.add(key);
+          return;
+        }
+
+        desiredDomOrder.push(createDomNode(newChild, stats));
+      });
+
+      oldMap.forEach((value, key) => {
+        if (!usedKeys.has(key) && value.domNode && value.domNode.parentNode === parent) {
+          parent.removeChild(value.domNode);
+          stats.domUpdates += 1;
+        }
+      });
+
+      let currentComparableChildren = getComparableChildNodes(parent);
+      desiredDomOrder.forEach((domNode, index) => {
+        const currentNode = currentComparableChildren[index];
+        if (currentNode !== domNode) {
+          parent.insertBefore(domNode, currentNode || null);
+          stats.domUpdates += 1;
+          currentComparableChildren = getComparableChildNodes(parent);
+        }
+      });
+    }
+
+    function decideRenderStrategy() {
+      const nextProfile =
+        state.thursdayMassiveMode && state.activeDay === "Thursday"
+          ? "thursday-massive"
+          : state.fridayMassiveMode && state.activeDay === "Friday"
+            ? "friday-massive"
+            : "normal";
+
+      if (!currentTree) {
+        return {
+          useFullReload: true,
+          reason: "첫 화면이라 전체 DOM을 만들었습니다.",
+          nextProfile
+        };
+      }
+
+      if (state.lastRenderedProfile !== "normal" || nextProfile !== "normal") {
+        return {
+          useFullReload: true,
+          reason:
+            nextProfile === "thursday-massive"
+              ? "목요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+              : nextProfile === "friday-massive"
+                ? "금요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+                : "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 전체 DOM 교체를 선택했습니다.",
+          nextProfile
+        };
+      }
+      return {
+        useFullReload: false,
+        nextProfile,
+        reason: "기본 구조 비교이므로 Virtual DOM Patch를 사용합니다."
+      };
+    }
+
+    function createDayButton(day) {
+      const isActive = state.activeDay === day;
+      return h(
+        "button",
+        {
+          type: "button",
+          key: `day-${day}`,
+          "data-day": day,
+          className: `relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group ${isActive ? "bg-primary border-primary text-white shadow-lg" : "bg-transparent border-outline text-accent hover:border-primary hover:text-primary"}`
+        },
+        h("div", { className: "flex flex-col items-center" },
+          h("span", { className: "text-[9px] uppercase tracking-tighter mb-0.5 opacity-60" }, day.substring(0, 3)),
+          h("span", { className: "text-lg font-serif italic leading-none" }, WEEKLY_DATA[day].ko)
+        ),
+        isActive ? h("span", { className: "absolute -bottom-2 w-1 h-1 bg-primary rounded-full" }) : null
+      );
+    }
+
+    function createScheduleSection(title, time, items, sectionKey) {
+      return h(
+        "section",
+        { className: "flex flex-col text-center", key: `${sectionKey}-section` },
+        h("div", { className: "mb-8 relative" },
+          h("h3", { className: "font-serif italic text-3xl text-primary mb-2" }, title),
+          h("div", { className: "w-12 h-[1px] bg-outline mx-auto mb-3" }),
+          h("p", { className: "text-[11px] tracking-[0.2em] text-accent font-medium uppercase" }, time)
+        ),
+        h(
+          "ul",
+          { className: "space-y-4 text-left max-h-[340px] overflow-y-auto px-2", key: `${sectionKey}-list` },
+          items.map((item, index) =>
+            h("li", {
+              key: `${sectionKey}-item-${index}`,
+              "data-stop-index": String(index),
+              className: "rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85"
+            }, item)
+          )
+        )
+      );
+    }
+
+    function renderApp() {
+      const currentSchedule = getScheduleData(state.activeDay);
+      return h(
+        "div",
+        { id: "app-root", key: "app-root", className: "min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 bg-background" },
+        h("div", { className: "max-w-5xl w-full", key: "page-shell" },
+          h("header", { className: "text-center mb-16", key: "header" },
+            h("h1", { className: "font-serif italic text-xs tracking-[0.4em] uppercase text-accent mb-6" }, "The Traveler's Notebook"),
+            h("h2", { className: "font-serif text-5xl md:text-6xl font-normal tracking-tight text-primary" }, "Weekly Travel Journal"),
+            h("p", { className: "mt-6 text-sm tracking-[0.28em] uppercase text-accent/70 font-medium" }, currentSchedule.city)
+          ),
+          h("nav", { className: "mb-12", key: "nav" },
+            h("div", { className: "flex justify-center items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto py-4 no-scrollbar" }, DAYS.map(createDayButton))
+          ),
+          h("section", { className: "mb-12 rounded-2xl border border-outline/70 bg-surface px-5 py-4 text-center", key: "compare-panel" },
+            h("p", { className: "text-[11px] uppercase tracking-[0.35em] text-accent/70 font-medium mb-3" }, "렌더링 비교"),
+            h("p", { className: "text-sm text-primary/80 leading-relaxed mb-2" }, "기본 요일 이동은 Virtual DOM Patch를 사용합니다. 목요일과 금요일은 10,000개 데이터가 처음 등장할 때만 한 번 전체 DOM을 만들고, 그 이후 재방문은 key + Map 기반 Patch를 사용합니다."),
+            h("p", { className: "text-sm font-medium text-primary mb-2", "data-render-info": "true" }, `${state.lastRenderMode} | DOM 변경 ${state.lastDomUpdates}회 | ${state.lastDuration.toFixed(3)}ms`),
+            h("p", { className: "text-xs text-accent/80 leading-relaxed", "data-render-reason": "true" }, state.lastReason)
+          ),
+          h("section", { className: "mb-12 flex flex-col items-center gap-4 rounded-2xl border border-outline/70 bg-white px-5 py-4", key: "massive-panel" },
+            h("p", { className: "text-sm text-primary/85 text-center leading-relaxed" }, "목요일과 금요일은 각각 독립적으로 10,000개 데이터를 켤 수 있습니다. 소량 요일에서 큰 구조로 처음 들어갈 때만 전체 교체가 일어나고, 이후 같은 큰 요일을 다시 볼 때는 Patch가 사용됩니다."),
+            h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
+              h("button", {
+                type: "button",
+                key: "toggle-thursday",
+                "data-thursday-massive-toggle": "true",
+                className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+              }, state.thursdayMassiveMode ? "목요일 10,000개 데이터 끄기" : "목요일 10,000개 데이터 켜기"),
+              h("button", {
+                type: "button",
+                key: "toggle-friday",
+                "data-friday-massive-toggle": "true",
+                className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+              }, state.fridayMassiveMode ? "금요일 10,000개 데이터 끄기" : "금요일 10,000개 데이터 켜기")
+            )
+          ),
+          h("main", { className: "grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]", key: "main" },
+            createScheduleSection("Daytime", "09:00 ~ 17:00", currentSchedule.daytime, "daytime"),
+            createScheduleSection("Night", "18:00 ~ 23:00", currentSchedule.night, "night")
+          ),
+          h("footer", { className: "mt-24 pt-12 border-t border-outline/30 text-center", key: "footer" },
+            h("p", { className: "text-[10px] uppercase tracking-[0.4em] text-accent/60 font-medium" }, "Open the developer console to compare patch and full reload logs")
+          )
+        )
+      );
+    }
+
+    function render() {
+      const nextTree = renderApp();
+      const decision = decideRenderStrategy();
+      const stats = createStats();
+      const start = performance.now();
+
+      if (decision.useFullReload) {
+        appHost.innerHTML = "";
+        stats.domUpdates += 1;
+        appHost.appendChild(createDomNode(nextTree, stats));
+      } else {
+        patchNode(appHost, appHost.firstElementChild, currentTree, nextTree, stats);
+      }
+
+      currentTree = nextTree;
+      if (state.thursdayMassiveMode && state.activeDay === "Thursday") state.hasMountedMassiveThursday = true;
+      if (state.fridayMassiveMode && state.activeDay === "Friday") state.hasMountedMassiveFriday = true;
+      state.lastRenderedProfile = decision.nextProfile;
+
+      const duration = performance.now() - start;
+      logRender(decision.useFullReload ? "전체 DOM 교체" : "Virtual DOM Patch", duration, stats.domUpdates, state.activeDay, decision.reason);
+    }
+
+    function setActiveDay(day) {
+      if (state.activeDay === day) return;
+      state.activeDay = day;
+      render();
+    }
+
+    function toggleThursdayMassiveMode() {
+      state.thursdayMassiveMode = !state.thursdayMassiveMode;
+      if (!state.thursdayMassiveMode) state.hasMountedMassiveThursday = false;
+      render();
+    }
+
+    function toggleFridayMassiveMode() {
+      state.fridayMassiveMode = !state.fridayMassiveMode;
+      if (!state.fridayMassiveMode) state.hasMountedMassiveFriday = false;
+      render();
+    }
+
+    document.addEventListener("click", (event) => {
+      const thursdayToggle = event.target.closest("[data-thursday-massive-toggle]");
+      if (thursdayToggle) {
+        toggleThursdayMassiveMode();
+        return;
+      }
+
+      const fridayToggle = event.target.closest("[data-friday-massive-toggle]");
+      if (fridayToggle) {
+        toggleFridayMassiveMode();
+        return;
+      }
+
+      const dayButton = event.target.closest("[data-day]");
+      if (dayButton) {
+        setActiveDay(dayButton.dataset.day);
+      }
+    });
+
+    currentTree = domToVNode(document.getElementById("app-root"));
+    logRender("초기 DOM 읽기", 0, 0, state.activeDay, "body 안에 있던 초기 DOM을 읽어서 Virtual DOM으로 변환했습니다.");
+  </script>
+</body>
+</html>
