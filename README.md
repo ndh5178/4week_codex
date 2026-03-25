@@ -504,8 +504,32 @@ function patchChildren(parent, oldChildren, newChildren, stats) {
   }
 
   const oldMap = new Map();
+  const usedKeys = new Set();
+  const desiredDomOrder = [];
+
   oldChildren.forEach((child, index) => {
-    oldMap.set(getNodeKey(child, index), { node: child, domNode: oldDomChildren[index] });
+    const key = getNodeKey(child, index);
+    oldMap.set(key, { node: child, domNode: oldDomChildren[index] });
+  });
+
+  newChildren.forEach((newChild, index) => {
+    const key = getNodeKey(newChild, index);
+    if (oldMap.has(key)) {
+      const matched = oldMap.get(key);
+      const patchedDom = patchNode(parent, matched.domNode, matched.node, newChild, stats);
+      desiredDomOrder.push(patchedDom);
+      usedKeys.add(key);
+      return;
+    }
+
+    desiredDomOrder.push(createDomNode(newChild, stats));
+  });
+
+  desiredDomOrder.forEach((domNode, index) => {
+    const currentNode = currentComparableChildren[index];
+    if (currentNode !== domNode) {
+      parent.insertBefore(domNode, currentNode || null);
+    }
   });
 }
 ```
@@ -516,3 +540,5 @@ Check values:
 - `decision.nextProfile === "friday-massive"`
 - `decision.useFullReload === false`
 - keyed diff path is used
+- if key order changes, matching nodes are found again with `oldMap`
+- DOM order is corrected with `insertBefore(...)`
