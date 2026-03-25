@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; padding: 24px; background: #fff; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { margin-bottom: 12px; }
+    p { color: #666; margin-bottom: 16px; }
+    ul { list-style: none; padding: 0; margin: 16px 0; }
+    li { padding: 8px 12px; border-left: 3px solid #ddd; margin-bottom: 6px; }
+    li.active { border-left-color: #0ff5ce; color: #0bc9a8; font-weight: bold; }
+    .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; background: #fafafa; }
+    .card h2 { margin-bottom: 8px; font-size: 18px; }
+    .card p { font-size: 14px; }
+    button { background: #0ff5ce; color: #000; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    footer { border-top: 1px solid #e0e0e0; padding-top: 12px; margin-top: 16px; font-size: 12px; color: #999; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1 id="title" style="color: #333;">Virtual DOM Demo</h1>
+  <p class="description">This is a sample paragraph.</p>
+  <ul class="item-list">
+    <li class="item" data-key="1">Item 1</li>
+    <li class="item active" data-key="2">Item 2</li>
+    <li class="item" data-key="3">Item 3</li>
+  </ul>
+  <div class="card">
+    <h2>Card Title</h2>
+    <p>Card content goes here.</p>
+    <button class="btn primary">Click Me</button>
+  </div>
+  <footer>
+    <span class="copyright">&copy; 2025</span>
+  </footer>
+</div>
+</body>
+</html>

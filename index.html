@@ -161,26 +161,30 @@
 
     @media (max-width: 860px) { .main-split { grid-template-columns: 1fr; } }
 
-    /* ── Real DOM panel ── */
-    #real-dom-area {
+    /* ── Real DOM panel (iframe) ── */
+    #real-dom-iframe {
       flex: 1;
-      padding: 14px;
-      overflow: auto;
+      width: 100%;
       min-height: 250px;
+      border: none;
+      background: #fff;
+      border-radius: 0 0 var(--radius) var(--radius);
     }
 
-    /* Styles for content inside real dom */
-    #real-dom-area .container { padding: 4px; }
-    #real-dom-area h1 { font-family: var(--font-display); font-size: 17px; margin-bottom: 8px; color: var(--text-primary); }
-    #real-dom-area h2 { font-family: var(--font-display); font-size: 14px; margin-bottom: 6px; color: var(--text-primary); }
-    #real-dom-area p  { color: var(--text-secondary); margin-bottom: 8px; font-size: 12px; }
-    #real-dom-area ul { list-style: none; margin: 8px 0; }
-    #real-dom-area li { padding: 4px 10px; border-left: 2px solid var(--border); margin-bottom: 4px; font-size: 12px; transition: all 0.2s; }
-    #real-dom-area li.active { border-left-color: var(--cyan); color: var(--cyan); }
-    #real-dom-area .card { border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin: 8px 0; background: var(--bg-card); }
-    #real-dom-area button { background: var(--cyan); color: #000; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-family: var(--font-mono); font-weight: 700; }
-    #real-dom-area footer { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
-    #real-dom-area span.copyright { font-size: 11px; color: var(--text-muted); }
+    /* ── File selector ── */
+    #file-selector {
+      padding: 4px 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-bright);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      outline: none;
+    }
+    #file-selector:hover { border-color: var(--cyan); }
+    #file-selector:focus { border-color: var(--cyan); box-shadow: 0 0 6px rgba(15,245,206,0.2); }
 
     /* Patch flash animation */
     @keyframes nodeFlash {
@@ -466,16 +470,17 @@
     <div class="header-left">
       <h1>🌳 Virtual DOM &amp; Diff Algorithm</h1>
       <span class="badge">Vanilla JS</span>
+      <select id="file-selector"></select>
     </div>
     <span class="meta">React의 핵심을 밑바닥부터 구현합니다.</span>
   </header>
 
   <!-- ── Main split ── -->
   <div class="main-split">
-    <!-- Left: Real DOM -->
+    <!-- Left: Real DOM (iframe) -->
     <div class="panel">
       <div class="panel-header"><span class="dot dc"></span>Real DOM — Patch 결과 렌더링</div>
-      <div id="real-dom-area"></div>
+      <iframe id="real-dom-iframe" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
     </div>
 
     <!-- Right: Editor + Preview -->
@@ -492,6 +497,7 @@
     <button class="btn" id="btn-undo" disabled>◀ 뒤로</button>
     <button class="btn btn-patch" id="btn-patch">▶ Patch 적용</button>
     <button class="btn" id="btn-redo" disabled>앞으로 ▶</button>
+    <button class="btn" id="btn-newtab">↗ 새 탭</button>
     <div class="history-wrap" id="history-wrap"></div>
     <div class="stat-chip" id="stat-chip">State <b>1 / 1</b></div>
   </div>
@@ -1148,14 +1154,15 @@ function showError(msg) {
  * @param {VNode} vnode
  */
 function applyState(vnode) {
-  // Real DOM 재빌드
-  const area = document.getElementById('real-dom-area');
-  area.innerHTML = '';
-  area.appendChild(vnodeToDOM(vnode));
-
   // 편집기 동기화
-  document.getElementById('html-editor').value = vnodeToHTML(vnode);
+  const bodyHTML = vnodeToHTML(vnode);
+  document.getElementById('html-editor').value = bodyHTML;
   updatePreview();
+
+  // iframe 업데이트
+  const fullDoc = buildFullDocument(bodyHTML);
+  updateIframe(fullDoc);
+  broadcastToTabs(fullDoc);
 
   // 트리 초기화 (변경 없음)
   renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
@@ -1177,6 +1184,8 @@ function updatePreview() {
   preview.innerHTML = '';
   if (parsed) {
     preview.appendChild(parsed.cloneNode(true));
+    // iframe도 실시간 반영
+    updateIframe(toFullDoc(editor.value.trim()));
   } else if (editor.value.trim()) {
     preview.textContent = '⚠ 유효하지 않은 HTML';
     preview.style.color = 'var(--red)';
@@ -1207,28 +1216,123 @@ const INITIAL_HTML = `<div class="container">
   </footer>
 </div>`;
 
-function init() {
-  const editor  = document.getElementById('html-editor');
-  const realDom = document.getElementById('real-dom-area');
+/* ── File templates & tab management ── */
+const FILE_TEMPLATES = [
+  { name: 'Built-in Demo', path: null },
+  { name: 'html1.html', path: 'html1.html' },
+  { name: 'html2.html', path: 'html2.html' },
+];
 
-  // 1. 편집기에 초기 HTML 삽입
-  editor.value = INITIAL_HTML;
+const openedTabs = [];
+let currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
 
-  // 2. 실제 DOM 영역 렌더링
-  const parsed = parseHTML(INITIAL_HTML);
-  if (!parsed) { showError('초기 HTML 파싱 실패'); return; }
-  realDom.appendChild(parsed.cloneNode(true));
+function extractBodyContent(fullHTML) {
+  const match = fullHTML.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  return match ? match[1].trim() : fullHTML;
+}
 
-  // 3. VNode 변환 → 히스토리 저장
-  const initVNode = domToVNode(realDom.firstElementChild);
-  history.push(initVNode);
+function extractHead(fullHTML) {
+  const match = fullHTML.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  return match ? match[1] : '';
+}
 
-  // 4. 트리 시각화 초기화
-  renderVTree(initVNode, new Set(), document.getElementById('vtree-old'));
-  renderVTree(initVNode, new Set(), document.getElementById('vtree-new'));
+function buildFullDocument(bodyHTML) {
+  return `<!DOCTYPE html>\n<html>\n<head><meta charset="UTF-8">${currentDocHead}</head>\n<body>${bodyHTML}</body>\n</html>`;
+}
 
-  // 5. 미리보기
+function toFullDoc(htmlContent) {
+  return /^\s*<!DOCTYPE|^\s*<html/i.test(htmlContent)
+    ? htmlContent
+    : buildFullDocument(htmlContent);
+}
+
+function updateIframe(fullDoc) {
+  const iframe = document.getElementById('real-dom-iframe');
+  iframe.srcdoc = fullDoc;
+}
+
+function broadcastToTabs(fullDoc) {
+  for (let i = openedTabs.length - 1; i >= 0; i--) {
+    if (openedTabs[i].closed) {
+      openedTabs.splice(i, 1);
+      continue;
+    }
+    try {
+      openedTabs[i].document.open();
+      openedTabs[i].document.write(fullDoc);
+      openedTabs[i].document.close();
+    } catch (_) {
+      openedTabs.splice(i, 1);
+    }
+  }
+}
+
+async function loadFile(path) {
+  if (!path) {
+    currentDocHead = '<style>body{font-family:sans-serif;padding:20px;}</style>';
+    resetApp(INITIAL_HTML, false);
+    return;
+  }
+  try {
+    const resp = await fetch(path);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    resetApp(text, true);
+  } catch (e) {
+    showError(`파일 로드 실패: ${e.message}`);
+  }
+}
+
+function resetApp(content, isFullDoc) {
+  let bodyHTML = content;
+  if (isFullDoc) {
+    const head = extractHead(content);
+    if (head) currentDocHead = head;
+    bodyHTML = extractBodyContent(content);
+  }
+
+  const editor = document.getElementById('html-editor');
+  editor.value = bodyHTML;
+
+  const parsed = parseHTML(bodyHTML);
+  if (!parsed) { showError('HTML 파싱 실패'); return; }
+
+  const vnode = domToVNode(parsed);
+  history.states = [];
+  history.cursor = -1;
+  history.push(vnode);
+
+  const fullDoc = buildFullDocument(bodyHTML);
+  updateIframe(fullDoc);
+  broadcastToTabs(fullDoc);
+
+  renderVTree(vnode, new Set(), document.getElementById('vtree-old'));
+  renderVTree(vnode, new Set(), document.getElementById('vtree-new'));
+
+  document.getElementById('diff-log').innerHTML =
+    '<div class="diff-empty">Patch를 적용하면 변경 사항이 여기에 표시됩니다.</div>';
+
   updatePreview();
+}
+
+function init() {
+  const editor = document.getElementById('html-editor');
+
+  // ── 파일 셀렉터 초기화 ──
+  const selector = document.getElementById('file-selector');
+  for (const tmpl of FILE_TEMPLATES) {
+    const opt = document.createElement('option');
+    opt.textContent = tmpl.name;
+    opt.value = tmpl.path || '';
+    selector.appendChild(opt);
+  }
+  selector.addEventListener('change', () => {
+    const path = selector.value || null;
+    loadFile(path);
+  });
+
+  // ── 초기 상태 로드 (Built-in Demo) ──
+  resetApp(INITIAL_HTML, false);
 
   // ── 이벤트 ──
 
@@ -1257,17 +1361,11 @@ function init() {
     // 변경 인덱스 수집 (트리 하이라이트용)
     const changedIdx = new Set(patches.map(p => p.index));
 
-    // Patch 적용
-    if (patches.length > 0) {
-      const rootEl = realDom.firstElementChild;
-      if (rootEl) {
-        patch(rootEl, patches);
-      } else {
-        // 루트가 없으면 완전 재빌드
-        realDom.innerHTML = '';
-        realDom.appendChild(vnodeToDOM(newVNode));
-      }
-    }
+    // iframe + 새 탭 업데이트
+    const bodyHTML = vnodeToHTML(newVNode);
+    const fullDoc = buildFullDocument(bodyHTML);
+    updateIframe(fullDoc);
+    broadcastToTabs(fullDoc);
 
     // VTree 업데이트 (변경 노드 하이라이트)
     renderVTree(oldVNode, new Set(), document.getElementById('vtree-old'));
@@ -1275,6 +1373,20 @@ function init() {
 
     // 히스토리 저장
     history.push(newVNode);
+  });
+
+  // ↗ 새 탭에서 열기
+  document.getElementById('btn-newtab').addEventListener('click', () => {
+    const currentVNode = history.getCurrent();
+    if (!currentVNode) return;
+    const bodyHTML = vnodeToHTML(currentVNode);
+    const fullDoc = buildFullDocument(bodyHTML);
+    const tab = window.open('', '_blank');
+    if (tab) {
+      tab.document.write(fullDoc);
+      tab.document.close();
+      openedTabs.push(tab);
+    }
   });
 
   // ◀ 뒤로가기
