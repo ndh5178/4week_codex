@@ -206,7 +206,17 @@
     }
 
     function createStats() {
-      return { domUpdates: 0 };
+      return {
+        domUpdates: 0,
+        operations: []
+      };
+    }
+
+    function pushOperation(stats, type, detail) {
+      stats.operations.push({
+        type,
+        detail
+      });
     }
 
     function logRender(mode, duration, domUpdates, day, reason) {
@@ -227,6 +237,18 @@
       const reasonInfo = document.querySelector("[data-render-reason]");
       if (modeInfo) modeInfo.textContent = `${mode} | DOM 변경 ${domUpdates}회 | ${duration.toFixed(3)}ms`;
       if (reasonInfo) reasonInfo.textContent = reason;
+    }
+
+    function logVirtualDomTrees(oldTree, newTree, operations = []) {
+      console.group("Virtual DOM 객체");
+      console.log("이전 VDOM", oldTree);
+      console.log("새 VDOM", newTree);
+      if (operations.length > 0) {
+        console.table(operations);
+      } else {
+        console.log("DOM 변경 작업", "변경 사항 없음");
+      }
+      console.groupEnd();
     }
 
     function h(tag, props = {}, ...children) {
@@ -367,6 +389,7 @@
       if (!oldNode && newNode) {
         const createdNode = createDomNode(newNode, stats);
         if (parent) parent.appendChild(createdNode);
+        pushOperation(stats, "노드 추가", newNode.type === "TEXT" ? newNode.value : `<${newNode.tag}>`);
         return createdNode;
       }
 
@@ -374,6 +397,7 @@
         if (parent && existingNode) {
           parent.removeChild(existingNode);
           stats.domUpdates += 1;
+          pushOperation(stats, "노드 제거", oldNode.type === "TEXT" ? oldNode.value : `<${oldNode.tag}>`);
         }
         return null;
       }
@@ -383,6 +407,11 @@
         if (parent && existingNode) {
           parent.replaceChild(replacement, existingNode);
           stats.domUpdates += 1;
+          pushOperation(
+            stats,
+            "노드 교체",
+            `${oldNode.type === "TEXT" ? oldNode.value : `<${oldNode.tag}>`} -> ${newNode.type === "TEXT" ? newNode.value : `<${newNode.tag}>`}`
+          );
         }
         return replacement;
       }
@@ -391,6 +420,7 @@
         if (oldNode.value !== newNode.value) {
           existingNode.nodeValue = newNode.value;
           stats.domUpdates += 1;
+          pushOperation(stats, "텍스트 변경", `${oldNode.value} -> ${newNode.value}`);
         }
         return existingNode;
       }
@@ -474,6 +504,8 @@
           : state.fridayMassiveMode && state.activeDay === "Friday"
             ? "friday-massive"
             : "normal";
+      const isCurrentMassive = state.lastRenderedProfile !== "normal";
+      const isNextMassive = nextProfile !== "normal";
 
       if (!currentTree) {
         return {
@@ -483,7 +515,7 @@
         };
       }
 
-      if (state.lastRenderedProfile !== "normal" || nextProfile !== "normal") {
+      if (!isCurrentMassive && isNextMassive) {
         return {
           useFullReload: true,
           reason:
@@ -495,6 +527,23 @@
           nextProfile
         };
       }
+
+      if (isCurrentMassive && !isNextMassive) {
+        return {
+          useFullReload: true,
+          reason: "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 전체 DOM 교체를 선택했습니다.",
+          nextProfile
+        };
+      }
+
+      if (isCurrentMassive && isNextMassive) {
+        return {
+          useFullReload: false,
+          nextProfile,
+          reason: "10,000개 대량 리스트끼리 이동하므로 Virtual DOM Patch를 사용합니다."
+        };
+      }
+
       return {
         useFullReload: false,
         nextProfile,
@@ -596,6 +645,7 @@
       const decision = decideRenderStrategy();
       const stats = createStats();
       const start = performance.now();
+      const previousTree = currentTree;
 
       if (decision.useFullReload) {
         appHost.innerHTML = "";
@@ -612,6 +662,7 @@
 
       const duration = performance.now() - start;
       logRender(decision.useFullReload ? "전체 DOM 교체" : "Virtual DOM Patch", duration, stats.domUpdates, state.activeDay, decision.reason);
+      logVirtualDomTrees(previousTree, nextTree, stats.operations);
     }
 
     function setActiveDay(day) {
@@ -653,6 +704,7 @@
 
     currentTree = domToVNode(document.getElementById("app-root"));
     logRender("초기 DOM 읽기", 0, 0, state.activeDay, "body 안에 있던 초기 DOM을 읽어서 Virtual DOM으로 변환했습니다.");
+    logVirtualDomTrees(null, currentTree, []);
   </script>
 </body>
 </html>
