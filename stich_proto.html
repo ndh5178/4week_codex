@@ -1,0 +1,652 @@
+﻿<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synthetic VDOM - Architect Console</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#ffb3ad",
+                        "primary": "#adc6ff",
+                        "background": "#0b1326",
+                        "on-tertiary": "#68000a",
+                        "on-secondary": "#003915",
+                        "error": "#ffb4ab",
+                        "outline": "#8c909f",
+                        "on-tertiary-container": "#5c0008",
+                        "on-tertiary-fixed-variant": "#930013",
+                        "secondary-fixed-dim": "#4ae176",
+                        "error-container": "#93000a",
+                        "tertiary": "#ffb3ad",
+                        "surface-container": "#171f33",
+                        "on-background": "#dae2fd",
+                        "on-primary-fixed-variant": "#004395",
+                        "inverse-surface": "#dae2fd",
+                        "inverse-on-surface": "#283044",
+                        "surface-container-lowest": "#060e20",
+                        "secondary-container": "#00b954",
+                        "on-secondary-container": "#004119",
+                        "on-error": "#690005",
+                        "surface-dim": "#0b1326",
+                        "on-primary-fixed": "#001a42",
+                        "surface-container-high": "#222a3d",
+                        "on-primary-container": "#00285d",
+                        "surface-tint": "#adc6ff",
+                        "on-primary": "#002e6a",
+                        "outline-variant": "#424754",
+                        "primary-container": "#4d8eff",
+                        "surface-bright": "#31394d",
+                        "tertiary-container": "#ff5451",
+                        "on-surface": "#dae2fd",
+                        "surface-container-highest": "#2d3449",
+                        "secondary-fixed": "#6bff8f",
+                        "on-tertiary-fixed": "#410004",
+                        "tertiary-fixed": "#ffdad7",
+                        "secondary": "#4ae176",
+                        "primary-fixed": "#d8e2ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-secondary-fixed-variant": "#005321",
+                        "surface": "#0b1326",
+                        "surface-container-low": "#131b2e",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#005ac2",
+                        "on-surface-variant": "#c2c6d6",
+                        "surface-variant": "#2d3449",
+                        "on-secondary-fixed": "#002109"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .code-shadow {
+            text-shadow: 0 0 15px rgba(173, 198, 255, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #060e20;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3449;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky bg-[#0b1326] border-none flex justify-between items-center px-6 h-14 z-50">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-slate-100 tracking-tighter font-['Space_Grotesk']">Synthetic VDOM</span>
+<nav class="hidden md:flex gap-6 items-center h-full">
+<a class="text-blue-400 font-bold border-b-2 border-blue-400 h-full flex items-center px-2 cursor-pointer transition-colors duration-200">Explorer</a>
+<a class="text-slate-400 hover:text-slate-200 h-full flex items-center px-2 cursor-pointer transition-colors duration-200">Diff Engine</a>
+<a class="text-slate-400 hover:text-slate-200 h-full flex items-center px-2 cursor-pointer transition-colors duration-200">Snapshot</a>
+<a class="text-slate-400 hover:text-slate-200 h-full flex items-center px-2 cursor-pointer transition-colors duration-200">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container-low px-3 py-1.5 rounded-lg flex items-center gap-2 border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm text-primary">search</span>
+<input class="bg-transparent border-none text-xs focus:ring-0 w-48 text-on-surface" placeholder="Search nodes..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-slate-800/50 rounded-lg transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-slate-400">settings</span>
+</button>
+<button class="p-2 hover:bg-slate-800/50 rounded-lg transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-slate-400">help</span>
+</button>
+<button class="p-2 hover:bg-slate-800/50 rounded-lg transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-slate-400">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 left-0 sticky bg-[#060e20] flex flex-col py-4 font-['Inter'] text-sm font-medium">
+<div class="px-6 mb-8">
+<h2 class="text-on-surface-variant font-headline font-bold text-xs uppercase tracking-widest opacity-50">Architect Console</h2>
+<p class="text-[10px] text-primary/60 font-mono">v2.4.0-alpha</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-3">
+<button class="w-full text-blue-400 bg-blue-500/10 border-r-2 border-blue-400 py-3 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                        Workspace
+                    </button>
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-3 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+                        Trees
+                    </button>
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-3 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                        Snapshots
+                    </button>
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-3 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+                        Analytics
+                    </button>
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-3 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                        Deploy
+                    </button>
+</div>
+</nav>
+<div class="px-6 py-4">
+<button class="w-full py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-lg shadow-primary/10 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Branch
+                </button>
+</div>
+<div class="mt-auto px-3 border-t border-outline-variant/10 pt-4">
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-2 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </button>
+<button class="w-full text-slate-500 hover:text-slate-300 hover:bg-white/5 py-2 px-4 flex items-center gap-3 transition-all duration-150 ease-in-out">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+                    Support
+                </button>
+</div>
+</aside>
+<!-- Main Workspace -->
+<main class="flex-1 flex flex-col bg-background p-0.5 gap-0.5">
+<!-- Top Half: Preview & Editor -->
+<div class="h-1/2 flex gap-0.5">
+<!-- Preview Panel (1/4 total width) -->
+<section class="flex-1 bg-surface-container-low flex flex-col rounded-tl-xl">
+<div class="h-10 px-4 flex items-center justify-between border-b border-background/50">
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase">Preview: Profile_Card</span>
+<div class="flex gap-2">
+<span class="w-2 h-2 rounded-full bg-error/40"></span>
+<span class="w-2 h-2 rounded-full bg-secondary/40"></span>
+<span class="w-2 h-2 rounded-full bg-primary/40"></span>
+</div>
+</div>
+<div class="flex-1 flex items-center justify-center p-8 bg-surface-container-lowest/30">
+<div class="w-full max-w-sm bg-surface rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+<div class="h-32 bg-gradient-to-tr from-primary-container/20 to-primary/5 relative">
+<img class="w-full h-full object-cover mix-blend-overlay opacity-60" data-alt="abstract geometric pattern with deep blue and soft purple gradients and subtle noise texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5f1MmEguqWbRGP3rbCQG_QvFeKEbmphwWmw4NrrIz6rW3esEnjtUR70ySOl6Lz83LCqPy6dqWdpzWqQy1iAy5EU8EcrYuEtTOoCkLOYnFKrlvo7EPauCqVL3u6mKwkSz_p9wYmYxRpYBEtVTR3bdxPEhOkj3Cu6nRAbkONrEjSGtIU2FaK8RsohoahC-3_1vARj78GL9runwZkGQOGi8kLe7pBg64Ys7DqCtdX0JvvcFKAqCxXq8dg2Rnpj79BA1lA5yR0n34Esg"/>
+</div>
+<div class="px-6 pb-8 -mt-12 relative flex flex-col items-center">
+<div class="w-24 h-24 rounded-full border-4 border-surface overflow-hidden bg-surface-container-highest shadow-xl">
+<img class="w-full h-full object-cover" data-alt="professional headshot of a developer in high-tech setting with neon blue backlighting and clean focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmnflnZTNhAD5Mtl7_42AIjVz3F6pzUjYNs-bLf6hgf4jWKM8IsKINbp4T1609SGn0BmVWet-RwdqEyNP_JItlFRNetkR7xehSkhdAaXHFT-1GsPPojOCunryqXK_Q9fJrXpnX-RKVLUbBFAHfmQVAUrNMPcw6Ek0BFaqUDCcs0gEO85l0DAWZvA54gj6m6RrGPiJy3DNV_-QSpRuwFLamTFRPiXG0124OKcTgCqZQyKxHd5BjMEkVzjompB85oCbqd9pBHjK8ZG8"/>
+</div>
+<h3 class="mt-4 text-xl font-headline font-bold text-on-surface">Alex Chen</h3>
+<p class="text-primary font-mono text-xs uppercase tracking-tighter">Senior Systems Architect</p>
+<div class="mt-6 flex gap-4 w-full">
+<div class="flex-1 text-center py-2 bg-surface-container-low rounded-lg border border-outline-variant/10">
+<p class="text-xs text-on-surface-variant font-mono">REPOS</p>
+<p class="text-lg font-headline font-bold">142</p>
+</div>
+<div class="flex-1 text-center py-2 bg-surface-container-low rounded-lg border border-outline-variant/10">
+<p class="text-xs text-on-surface-variant font-mono">MERGES</p>
+<p class="text-lg font-headline font-bold">8.4k</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Editor Panel (1/4 total width) -->
+<section class="flex-1 bg-surface flex flex-col rounded-tr-xl">
+<div class="h-10 px-4 flex items-center justify-between border-b border-background/50">
+<div class="flex gap-4">
+<span class="text-[10px] font-bold tracking-widest text-primary uppercase">Editor: main.jsx</span>
+<span class="text-[10px] text-on-surface-variant/40 font-mono italic">modified 2m ago</span>
+</div>
+<span class="material-symbols-outlined text-sm text-on-surface-variant">terminal</span>
+</div>
+<div class="flex-1 font-mono text-sm p-6 overflow-auto custom-scrollbar bg-surface-container-lowest">
+<div class="flex gap-4 group">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">1</span>
+<span class="text-on-surface-variant"><span class="text-tertiary">import</span> React <span class="text-tertiary">from</span> <span class="text-secondary">'react'</span>;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">2</span>
+<span class="text-on-surface-variant"><span class="text-tertiary">import</span> { Card } <span class="text-tertiary">from</span> <span class="text-secondary">'./ui/Card'</span>;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">3</span>
+<span></span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">4</span>
+<span class="text-on-surface-variant"><span class="text-tertiary-fixed-dim">export const</span> <span class="text-primary">ProfileCard</span> = ({ user }) =&gt; {</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">5</span>
+<span class="text-on-surface-variant ml-4"><span class="text-tertiary">return</span> (</span>
+</div>
+<div class="flex gap-4 bg-primary/5 border-l-2 border-primary">
+<span class="text-primary/40 text-right w-6 select-none">6</span>
+<span class="text-on-surface ml-8">&lt;<span class="text-primary">Card</span> <span class="text-primary-container">className</span>=<span class="text-secondary">"v2-layout"</span>&gt;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">7</span>
+<span class="text-on-surface ml-12">&lt;<span class="text-primary">UserHeader</span> src={user.avatar} /&gt;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">8</span>
+<span class="text-on-surface ml-12">&lt;<span class="text-primary">StatsGrid</span> data={user.stats} /&gt;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">9</span>
+<span class="text-on-surface ml-8">&lt;/<span class="text-primary">Card</span>&gt;</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">10</span>
+<span class="text-on-surface ml-4">);</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-surface-variant/20 text-right w-6 select-none">11</span>
+<span class="text-on-surface">};</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Bottom Half: Diff Analysis -->
+<section class="h-1/2 bg-surface-container-low flex flex-col rounded-b-xl relative overflow-hidden">
+<!-- Analysis Header -->
+<div class="h-14 px-6 flex items-center justify-between border-b border-background bg-surface-container-low/80 backdrop-blur-md sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+<h2 class="font-headline font-bold text-lg tracking-tight">VDOM Diff Analysis</h2>
+<div class="flex gap-2 ml-4">
+<span class="px-2 py-0.5 rounded bg-secondary-container/20 text-secondary text-[10px] font-mono border border-secondary/20">+14 additions</span>
+<span class="px-2 py-0.5 rounded bg-error-container/20 text-tertiary text-[10px] font-mono border border-tertiary/20">-8 deletions</span>
+</div>
+</div>
+<button class="px-6 py-2 bg-surface-container-highest hover:bg-surface-bright text-primary font-mono text-xs font-bold rounded flex items-center gap-2 border border-primary/20 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="file_upload">file_upload</span>
+                        EXPORT_PATCH
+                    </button>
+</div>
+<!-- Diff Content -->
+<div class="flex-1 overflow-auto custom-scrollbar font-mono text-xs flex">
+<!-- Line Numbers Gutter -->
+<div class="w-12 bg-background/30 flex flex-col items-end py-4 px-2 text-on-surface-variant/20 border-r border-background select-none">
+<span>102</span>
+<span>103</span>
+<span class="text-tertiary">104</span>
+<span class="text-tertiary">105</span>
+<span class="text-secondary">106</span>
+<span class="text-secondary">107</span>
+<span class="text-secondary">108</span>
+<span>109</span>
+<span>110</span>
+<span>111</span>
+<span class="text-secondary">112</span>
+<span>113</span>
+<span>114</span>
+</div>
+<!-- Diff Body -->
+<div class="flex-1 py-4">
+<div class="px-4 opacity-40">const vNode = createInternalElement(Component, {</div>
+<div class="px-4 opacity-40">혻혻props: mergedProps,</div>
+<!-- Deleted -->
+<div class="bg-error-container/10 border-l-4 border-tertiary px-4 py-0.5 flex items-center group">
+<span class="text-tertiary mr-4 font-bold">-</span>
+<span class="text-tertiary/80">oldState: this.memoizedState,</span>
+<span class="ml-auto opacity-0 group-hover:opacity-100 text-[9px] text-tertiary uppercase">deprecated hook</span>
+</div>
+<div class="bg-error-container/10 border-l-4 border-tertiary px-4 py-0.5 flex items-center group">
+<span class="text-tertiary mr-4 font-bold">-</span>
+<span class="text-tertiary/80">forceUpdate: false</span>
+</div>
+<!-- Added -->
+<div class="bg-secondary-container/10 border-l-4 border-secondary px-4 py-0.5 flex items-center group">
+<span class="text-secondary mr-4 font-bold">+</span>
+<span class="text-secondary/80">stateRef: reconciliationContext.activeState,</span>
+<span class="ml-auto opacity-0 group-hover:opacity-100 text-[9px] text-secondary uppercase">atomic update</span>
+</div>
+<div class="bg-secondary-container/10 border-l-4 border-secondary px-4 py-0.5 flex items-center">
+<span class="text-secondary mr-4 font-bold">+</span>
+<span class="text-secondary/80">hydrationMode: 'concurrent',</span>
+</div>
+<div class="bg-secondary-container/10 border-l-4 border-secondary px-4 py-0.5 flex items-center">
+<span class="text-secondary mr-4 font-bold">+</span>
+<span class="text-secondary/80">priority: scheduler.getCurrentPriority()</span>
+</div>
+<div class="px-4 opacity-40">});</div>
+<div class="px-4 opacity-40">vNode.parent = activeFiber;</div>
+<div class="px-4 opacity-40">vNode.alternate = oldFiber;</div>
+<div class="bg-secondary-container/10 border-l-4 border-secondary px-4 py-0.5 flex items-center mt-2">
+<span class="text-secondary mr-4 font-bold">+</span>
+<span class="text-secondary/80">if (isSyntheticEvent(vNode)) applyGlobalTraps(vNode);</span>
+</div>
+<div class="px-4 opacity-40 mt-2">reconcileChildren(activeFiber, vNode.children);</div>
+<div class="px-4 opacity-40">return finalizeFiber(activeFiber);</div>
+</div>
+<!-- Side Visualization Panel -->
+<div class="w-80 bg-surface-container-lowest border-l border-background/50 p-6 flex flex-col gap-6">
+<h3 class="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase">Reconciliation Graph</h3>
+<div class="flex-1 flex flex-col items-center justify-center gap-4">
+<div class="w-12 h-12 rounded-lg border-2 border-primary/40 bg-primary/5 flex items-center justify-center shadow-[0_0_20px_rgba(173,198,255,0.1)]">
+<span class="material-symbols-outlined text-primary">hub</span>
+</div>
+<div class="w-0.5 h-8 bg-gradient-to-b from-primary/40 to-secondary/40"></div>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded border-2 border-secondary/40 bg-secondary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm">check_circle</span>
+</div>
+<div class="w-10 h-10 rounded border-2 border-tertiary/40 bg-tertiary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-sm">cancel</span>
+</div>
+</div>
+<p class="mt-4 text-[10px] text-center text-on-surface-variant leading-relaxed">
+                                Detected structural deviation in <span class="text-primary font-bold">FiberTree::Root</span>. 
+                                Patch generation will prioritize atomic hydration.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Background Decorative Elements -->
+<div class="fixed inset-0 pointer-events-none z-[-1] opacity-20">
+<div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary/5 blur-[120px] rounded-full"></div>
+</div>
+<script>
+    (() => {
+        const topNavButtons = Array.from(document.querySelectorAll('header nav a'));
+        const sideNavButtons = Array.from(document.querySelectorAll('aside nav button')).slice(0, 5);
+        const workspaceRoot = document.querySelector('body > div.flex.flex-1.overflow-hidden > main');
+
+        if (!workspaceRoot || topNavButtons.length === 0 || sideNavButtons.length === 0) {
+            return;
+        }
+
+        const topWorkspacePanel = workspaceRoot.children[0];
+        const bottomWorkspacePanel = workspaceRoot.children[1];
+        const topViews = ['Explorer', 'Diff Engine', 'Snapshot', 'History'];
+        const sideViews = ['Workspace', 'Trees', 'Snapshots', 'Analytics', 'Deploy'];
+        const viewIcons = {
+            'Explorer': 'travel_explore',
+            'Diff Engine': 'difference',
+            'Snapshot': 'history',
+            'History': 'timeline',
+            'Workspace': 'grid_view',
+            'Trees': 'account_tree',
+            'Snapshots': 'history',
+            'Analytics': 'insights',
+            'Deploy': 'rocket_launch'
+        };
+        const state = {
+            top: 'Explorer',
+            side: 'Workspace'
+        };
+
+        const blankBottomView = document.createElement('section');
+        blankBottomView.className = 'hidden h-1/2 bg-surface-container-low flex flex-col rounded-b-xl relative overflow-hidden';
+        workspaceRoot.appendChild(blankBottomView);
+
+        // 상단 헤더 버튼의 활성 스타일을 상태값에 맞춰 갱신하는 함수입니다.
+        // 어떤 상단 섹션이 선택됐는지 바로 보여줘야 버튼 동작 여부를 즉시 확인할 수 있어서 별도 함수로 분리했습니다.
+        function updateTopButtonStyles() {
+            topNavButtons.forEach((button, index) => {
+                const isActive = topViews[index] === state.top;
+
+                button.classList.toggle('text-blue-400', isActive);
+                button.classList.toggle('font-bold', isActive);
+                button.classList.toggle('border-b-2', isActive);
+                button.classList.toggle('border-blue-400', isActive);
+                button.classList.toggle('text-slate-400', !isActive);
+                button.classList.toggle('hover:text-slate-200', !isActive);
+            });
+        }
+
+        // 좌측 메뉴 버튼의 활성 스타일을 상태값에 맞춰 갱신하는 함수입니다.
+        // 기존 레이아웃은 그대로 두면서 선택된 메뉴만 강조해야 원본 디자인을 해치지 않아 이 방식으로 처리했습니다.
+        function updateSideButtonStyles() {
+            sideNavButtons.forEach((button, index) => {
+                const isActive = sideViews[index] === state.side;
+
+                button.classList.toggle('text-blue-400', isActive);
+                button.classList.toggle('bg-blue-500/10', isActive);
+                button.classList.toggle('border-r-2', isActive);
+                button.classList.toggle('border-blue-400', isActive);
+                button.classList.toggle('text-slate-500', !isActive);
+                button.classList.toggle('hover:text-slate-300', !isActive);
+                button.classList.toggle('hover:bg-white/5', !isActive);
+            });
+        }
+
+        // Trees 메뉴에서 code_proto.html의 VDOM Visualizer 구성을 하단 패널에 이식해 보여주는 함수입니다.
+        // 이번 버전은 Editor: main.jsx의 JSX 구조를 기준으로 트리를 보여줘야 하므로, ProfileCard -> Card -> UserHeader/StatsGrid 계층으로 다시 구성했습니다.
+        function createTreesVisualizerMarkup() {
+            return `
+                <div class="h-14 px-6 flex items-center justify-between border-b border-background bg-surface-container-low/80 backdrop-blur-md">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary">account_tree</span>
+                        <h2 class="font-headline font-bold text-lg tracking-tight">VDOM Tree Explorer</h2>
+                        <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-mono border border-primary/20">TREE MODE</span>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-[0.3em] text-on-surface-variant font-mono">Explorer / Trees</span>
+                </div>
+                <div class="flex-1 overflow-hidden grid grid-cols-1 xl:grid-cols-[1.15fr_280px]">
+                    <section class="relative bg-surface min-h-0 overflow-hidden">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-full h-full max-w-2xl max-h-[80%] overflow-visible p-12">
+                                <line stroke="#a7c8ff" stroke-width="2" x1="50%" x2="50%" y1="10%" y2="34%"></line>
+                                <line stroke="#414753" stroke-width="1.5" x1="50%" x2="30%" y1="34%" y2="62%"></line>
+                                <line stroke="#a7c8ff" stroke-width="2" x1="50%" x2="70%" y1="34%" y2="62%"></line>
+                                <g class="cursor-pointer" transform="translate(-40,-20)">
+                                    <foreignObject height="40" width="80" x="50%" y="10%">
+                                        <div class="w-20 h-10 bg-surface-container border-2 border-primary rounded flex items-center justify-center text-[10px] font-label font-bold tracking-tighter text-primary shadow-lg shadow-primary/10">
+                                            CARD
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                                <g class="cursor-pointer group" transform="translate(-40,-20)">
+                                    <foreignObject height="42" width="116" x="50%" y="34%">
+                                        <div class="w-[7.25rem] h-10 bg-primary/20 border border-primary rounded flex items-center justify-center text-[10px] font-label font-bold text-primary shadow-sm">
+                                            ProfileCard
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                                <g class="cursor-pointer" transform="translate(-40,-20)">
+                                    <foreignObject height="40" width="108" x="30%" y="62%">
+                                        <div class="w-[6.75rem] h-10 bg-surface-container-high border border-outline-variant/30 rounded flex items-center justify-center text-[10px] font-label font-bold text-on-surface-variant">
+                                            UserHeader
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                                <g class="cursor-pointer" transform="translate(-40,-20)">
+                                    <foreignObject height="40" width="108" x="70%" y="62%">
+                                        <div class="w-[6.75rem] h-10 bg-secondary/10 border border-secondary/30 rounded flex items-center justify-center text-[10px] font-label font-bold text-secondary">
+                                            StatsGrid
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="absolute top-6 left-6 flex flex-col gap-2">
+                            <div class="flex items-center gap-3 bg-surface-container/50 px-3 py-1.5 rounded-full border border-outline-variant/10 backdrop-blur-sm">
+                                <span class="material-symbols-outlined text-sm text-on-surface-variant">search</span>
+                                <span class="text-[10px] text-on-surface-variant/70 font-label tracking-widest">SEARCH JSX NODES...</span>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-6 left-6 max-w-xs bg-surface-container border border-outline-variant/20 p-4 shadow-2xl rounded-sm backdrop-blur-xl bg-opacity-80">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-label font-bold text-xs uppercase tracking-widest text-primary">Node Inspector</h3>
+                                <span class="px-2 py-0.5 bg-primary/10 text-primary text-[9px] rounded font-bold">main.jsx</span>
+                            </div>
+                            <div class="space-y-2 font-mono text-[10px]">
+                                <div class="flex justify-between">
+                                    <span class="text-on-surface-variant/50">COMPONENT</span>
+                                    <span class="text-secondary-fixed">Card</span>
+                                </div>
+                                <div class="flex justify-between border-t border-outline-variant/5 pt-1">
+                                    <span class="text-on-surface-variant/50">CHILDREN</span>
+                                    <span>2 NODES</span>
+                                </div>
+                                <div class="flex justify-between border-t border-outline-variant/5 pt-1">
+                                    <span class="text-on-surface-variant/50">PARENT</span>
+                                    <span>ProfileCard</span>
+                                </div>
+                                <div class="flex flex-col gap-1 border-t border-outline-variant/5 pt-1">
+                                    <span class="text-on-surface-variant/50">PROPS</span>
+                                    <div class="bg-surface-container-lowest p-2 rounded-sm text-[9px] border border-outline-variant/10">
+                                        <span class="text-primary-fixed-dim">className:</span> "v2-layout"<br/>
+                                        <span class="text-primary-fixed-dim">children:</span> UserHeader, StatsGrid
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <aside class="bg-surface-container-lowest border-l border-background/50 p-6 flex flex-col gap-6 overflow-auto custom-scrollbar">
+                        <div>
+                            <p class="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-3">Tree Summary</p>
+                            <h3 class="font-headline text-2xl font-bold text-on-surface mb-2">main.jsx Structure</h3>
+                            <p class="text-sm text-on-surface-variant leading-relaxed">
+                                현재 Trees 패널은 Editor의 main.jsx에 보이는 JSX를 기준으로 구성됩니다. ProfileCard 컴포넌트가 Card className="v2-layout"을 반환하고, 그 내부에 UserHeader와 StatsGrid가 자식으로 배치되는 구조를 트리로 표현했습니다.
+                            </p>
+                        </div>
+                        <div class="grid gap-3">
+                            <div class="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+                                <p class="text-[10px] uppercase tracking-[0.28em] text-primary/70 font-mono mb-2">ROOT</p>
+                                <p class="text-sm font-semibold text-on-surface">ProfileCard</p>
+                            </div>
+                            <div class="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+                                <p class="text-[10px] uppercase tracking-[0.28em] text-primary/70 font-mono mb-2">WRAPPER</p>
+                                <p class="text-sm text-on-surface-variant">Card className="v2-layout"</p>
+                            </div>
+                            <div class="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
+                                <p class="text-[10px] uppercase tracking-[0.28em] text-primary/70 font-mono mb-2">CHILDREN</p>
+                                <p class="text-sm text-on-surface-variant">UserHeader src={user.avatar}, StatsGrid data={user.stats}</p>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            `;
+        }
+
+        // 하단 빈 화면의 내용을 현재 선택 상태에 맞게 구성하는 함수입니다.
+        // 상단 Preview와 Editor는 고정하고 하단만 바꾸려는 요구사항이므로, 대체 화면 마크업을 여기서만 관리하도록 분리했습니다.
+        function createBottomPlaceholderMarkup() {
+            if (state.top === 'Explorer' && state.side === 'Trees') {
+                return createTreesVisualizerMarkup();
+            }
+
+            return `
+                <div class="h-14 px-6 flex items-center justify-between border-b border-background bg-surface-container-low/80 backdrop-blur-md">
+                    <div class="flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary">${viewIcons[state.side] || viewIcons[state.top] || 'dashboard'}</span>
+                        <h2 class="font-headline font-bold text-lg tracking-tight">${state.side} Panel</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded bg-primary/10 text-primary text-[10px] font-mono border border-primary/20">${state.top}</span>
+                </div>
+                <div class="flex-1 flex items-center justify-center p-10 bg-[radial-gradient(circle_at_top,_rgba(173,198,255,0.12),_transparent_45%)]">
+                    <div class="text-center max-w-xl">
+                        <div class="w-20 h-20 mx-auto mb-6 rounded-2xl border border-primary/20 bg-primary/5 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-5xl text-primary">${viewIcons[state.side] || viewIcons[state.top] || 'dashboard'}</span>
+                        </div>
+                        <p class="text-[11px] uppercase tracking-[0.35em] text-primary/60 font-mono mb-4">${state.top}</p>
+                        <h2 class="font-headline text-4xl font-bold text-on-surface mb-3">${state.side}</h2>
+                        <p class="text-sm text-on-surface-variant leading-relaxed">
+                            상단의 <span class="text-primary font-semibold">Preview</span>와 <span class="text-primary font-semibold">Editor</span>는 고정되어 있고,
+                            현재 선택된 메뉴 조합에 따라 하단 패널만 JavaScript로 교체되고 있습니다.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 현재 선택된 상단/좌측 조합에 따라 하단 패널만 원본 또는 대체 화면으로 전환하는 함수입니다.
+        // 사용자가 요청한 것처럼 상단 2개 패널은 항상 유지하고, 하단 분석 영역만 교체되도록 범위를 명확히 제한했습니다.
+        function renderCurrentView() {
+            const shouldShowOriginalBottom = state.top === 'Explorer' && state.side === 'Workspace';
+
+            if (topWorkspacePanel) {
+                topWorkspacePanel.style.display = '';
+            }
+
+            if (shouldShowOriginalBottom) {
+                if (bottomWorkspacePanel) {
+                    bottomWorkspacePanel.style.display = '';
+                }
+
+                blankBottomView.classList.add('hidden');
+                blankBottomView.innerHTML = '';
+                return;
+            }
+
+            if (bottomWorkspacePanel) {
+                bottomWorkspacePanel.style.display = 'none';
+            }
+
+            blankBottomView.classList.remove('hidden');
+            blankBottomView.innerHTML = createBottomPlaceholderMarkup();
+        }
+
+        // 상단 헤더 버튼에 클릭 이벤트를 연결하는 함수입니다.
+        // 페이지 이동 없이 현재 화면 상태만 바꿔야 하므로 클릭 시 기본 동작을 막고 상태만 갱신합니다.
+        function bindTopNavEvents() {
+            topNavButtons.forEach((button, index) => {
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    state.top = topViews[index];
+                    updateTopButtonStyles();
+                    renderCurrentView();
+                });
+            });
+        }
+
+        // 좌측 메뉴 버튼에 클릭 이벤트를 연결하는 함수입니다.
+        // 메뉴 선택이 실제 화면 전환으로 이어져야 요청사항을 충족하므로 상태 변경과 렌더링을 함께 수행합니다.
+        function bindSideNavEvents() {
+            sideNavButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    state.side = sideViews[index];
+                    updateSideButtonStyles();
+                    renderCurrentView();
+                });
+            });
+        }
+
+        // 초기 상태를 한 번에 맞추는 부트스트랩 함수입니다.
+        // 첫 진입부터 버튼 스타일과 표시 화면이 서로 어긋나지 않게 하려는 목적이라 초기 렌더를 여기서 수행합니다.
+        function initializeInteractiveNavigation() {
+            bindTopNavEvents();
+            bindSideNavEvents();
+            updateTopButtonStyles();
+            updateSideButtonStyles();
+            renderCurrentView();
+        }
+
+        initializeInteractiveNavigation();
+    })();
+</script>
+</body></html>

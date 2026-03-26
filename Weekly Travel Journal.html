@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html class="light" lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Travel Journal | Mono Accent Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            background: "#ffffff",
+            "on-background": "#1a1a1a",
+            surface: "#fcfcfc",
+            "on-surface": "#1a1a1a",
+            primary: "#1A1C1E",
+            "on-primary": "#ffffff",
+            outline: "#e5e5e5",
+            accent: "#717171"
+          },
+          fontFamily: {
+            serif: ["Playfair Display", "serif"],
+            sans: ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #ffffff;
+      color: #1A1C1E;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #e5e5e5;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="font-sans">
+  <div id="app-host">
+    <div id="app-root" class="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 bg-background" data-key="app-root">
+      <div class="max-w-5xl w-full" data-key="page-shell">
+        <header class="text-center mb-16" data-key="header">
+          <h1 class="font-serif italic text-xs tracking-[0.4em] uppercase text-accent mb-6">The Traveler's Notebook</h1>
+
+
+
+
+          <h2 class="font-serif text-5xl md:text-6xl font-normal tracking-tight text-primary">
+            
+            Weekly Travel Journal
+          
+          </h2>
+          
+          
+          
+          
+          
+          <p class="mt-6 text-sm tracking-[0.28em] uppercase text-accent/70 font-medium">Seoul</p>
+        </header>
+
+        <nav class="mb-12" data-key="nav">
+          <div class="flex justify-center items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto py-4 no-scrollbar">
+            <button type="button" data-day="Monday" data-key="day-Monday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-primary border-primary text-white shadow-lg">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Mon</span>
+                <span class="text-lg font-serif italic leading-none">월</span>
+              </div>
+              <span class="absolute -bottom-2 w-1 h-1 bg-primary rounded-full"></span>
+            </button>
+            <button type="button" data-day="Tuesday" data-key="day-Tuesday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Tue</span>
+                <span class="text-lg font-serif italic leading-none">화</span>
+              </div>
+            </button>
+            <button type="button" data-day="Wednesday" data-key="day-Wednesday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Wed</span>
+                <span class="text-lg font-serif italic leading-none">수</span>
+              </div>
+            </button>
+            <button type="button" data-day="Thursday" data-key="day-Thursday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Thu</span>
+                <span class="text-lg font-serif italic leading-none">목</span>
+              </div>
+            </button>
+            <button type="button" data-day="Friday" data-key="day-Friday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Fri</span>
+                <span class="text-lg font-serif italic leading-none">금</span>
+              </div>
+            </button>
+            <button type="button" data-day="Saturday" data-key="day-Saturday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Sat</span>
+                <span class="text-lg font-serif italic leading-none">토</span>
+              </div>
+            </button>
+            <button type="button" data-day="Sunday" data-key="day-Sunday" class="relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group bg-transparent border-outline text-accent hover:border-primary hover:text-primary">
+              <div class="flex flex-col items-center">
+                <span class="text-[9px] uppercase tracking-tighter mb-0.5 opacity-60">Sun</span>
+                <span class="text-lg font-serif italic leading-none">일</span>
+              </div>
+            </button>
+          </div>
+        </nav>
+
+        <section class="mb-12 rounded-2xl border border-outline/70 bg-surface px-5 py-4 text-center" data-key="compare-panel">
+          <p class="text-[11px] uppercase tracking-[0.35em] text-accent/70 font-medium mb-3">렌더링 비교</p>
+          <p class="text-sm text-primary/80 leading-relaxed mb-2">기본 요일 이동은 Virtual DOM Patch를 사용합니다. 목요일과 금요일은 10,000개 데이터가 처음 등장할 때만 한 번 전체 DOM을 만들고, 그 이후 재방문은 key + Map 기반 Patch를 사용합니다.</p>
+          <p class="text-sm font-medium text-primary mb-2" data-render-info="true">초기 렌더링 | DOM 변경 0회 | 0.000ms</p>
+          <p class="text-xs text-accent/80 leading-relaxed" data-render-reason="true">초기 DOM을 읽어서 Virtual DOM으로 만들었습니다.</p>
+        </section>
+
+        <section class="mb-12 flex flex-col items-center gap-4 rounded-2xl border border-outline/70 bg-white px-5 py-4" data-key="massive-panel">
+          <p class="text-sm text-primary/85 text-center leading-relaxed">목요일과 금요일은 각각 독립적으로 10,000개 데이터를 켤 수 있습니다. 소량 요일에서 큰 구조로 처음 들어갈 때만 전체 교체가 일어나고, 이후 같은 큰 요일을 다시 볼 때는 Patch가 사용됩니다.</p>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button type="button" data-thursday-massive-toggle="true" data-key="toggle-thursday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">목요일 10,000개 데이터 켜기</button>
+            <button type="button" data-friday-massive-toggle="true" data-key="toggle-friday" class="rounded-full border px-5 py-2 text-sm font-medium border-outline bg-transparent text-primary">금요일 10,000개 데이터 켜기</button>
+            <button type="button" data-debug-toggle="true" data-key="toggle-debug" class="rounded-full border px-5 py-2 text-sm font-medium border-primary bg-primary text-white">디버깅 모드 켜짐</button>
+          </div>
+          <p class="text-xs text-accent/80 text-center leading-relaxed" data-debug-status="true">디버깅 모드가 활성화되어 콘솔과 VDOM 추적 로그를 출력합니다.</p>
+        </section>
+
+        <main class="grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]" data-key="main">
+          <section class="flex flex-col text-center" data-key="daytime-section">
+            <div class="mb-8 relative">
+              <h3 class="font-serif italic text-3xl text-primary mb-2">Daytime</h3>
+              <div class="w-12 h-[1px] bg-outline mx-auto mb-3"></div>
+              <p class="text-[11px] tracking-[0.2em] text-accent font-medium uppercase">09:00 ~ 17:00</p>
+            </div>
+            <ul class="space-y-4 text-left max-h-[340px] overflow-y-auto px-2" data-key="daytime-list">
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-0" data-stop-index="0">성수동 베이커리 골목 산책</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-1" data-stop-index="1">서울숲 자전거 코스 한 바퀴</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="daytime-item-2" data-stop-index="2">북카페에서 첫날 여행 메모 정리</li>
+            </ul>
+          </section>
+
+          <section class="flex flex-col text-center" data-key="night-section">
+            <div class="mb-8 relative">
+              <h3 class="font-serif italic text-3xl text-primary mb-2">Night</h3>
+              <div class="w-12 h-[1px] bg-outline mx-auto mb-3"></div>
+              <p class="text-[11px] tracking-[0.2em] text-accent font-medium uppercase">18:00 ~ 23:00</p>
+            </div>
+            <ul class="space-y-4 text-left max-h-[340px] overflow-y-auto px-2" data-key="night-list">
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-0" data-stop-index="0">남산 타워 야경 감상</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-1" data-stop-index="1">종로 포장마차 거리에서 저녁</li>
+              <li class="rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85" data-key="night-item-2" data-stop-index="2">한강 피크닉으로 첫날 마무리</li>
+            </ul>
+          </section>
+        </main>
+
+        <footer class="mt-24 pt-12 border-t border-outline/30 text-center" data-key="footer">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-accent/60 font-medium">Open the developer console to compare patch and full reload logs</p>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <section id="whitebox-runner" class="mx-auto w-full max-w-5xl px-6 pb-12 sm:px-12">
+    <div class="rounded-3xl border border-outline/70 bg-surface px-5 py-5 shadow-sm">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p class="mb-2 text-[11px] font-medium uppercase tracking-[0.35em] text-accent/70">White-box Test Panel</p>
+          <h3 class="font-serif text-3xl text-primary">Scenario Values</h3>
+          <p class="mt-2 text-sm leading-relaxed text-primary/75">
+            Run one scenario and check the render decision values immediately.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2" data-whitebox-scenario-buttons="true">
+          <button type="button" data-whitebox-scenario="general-patch" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">1. Patch</button>
+          <button type="button" data-whitebox-scenario="enter-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">2. Full Reload</button>
+          <button type="button" data-whitebox-scenario="massive-to-massive" class="rounded-full border border-outline bg-white px-4 py-2 text-sm font-medium text-primary">3. Keyed Patch</button>
+        </div>
+      </div>
+
+      <div class="mt-5 rounded-2xl border border-dashed border-outline bg-white px-4 py-3">
+        <p class="text-sm text-primary/85" data-whitebox-status="true">Select a scenario button to collect the internal render values.</p>
+      </div>
+
+      <div class="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <section class="rounded-2xl border border-outline/70 bg-white px-4 py-4">
+          <p class="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-accent/70">Current Decision</p>
+          <div class="space-y-3" data-whitebox-summary="true"></div>
+        </section>
+        <section class="rounded-2xl border border-outline/70 bg-white px-4 py-4">
+          <p class="mb-3 text-xs font-medium uppercase tracking-[0.25em] text-accent/70">Flow</p>
+          <div class="space-y-3" data-whitebox-steps="true"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const MASSIVE_ITEM_COUNT = 10000;
+
+    const WEEKLY_DATA = {
+      Monday: { ko: "월", city: "Seoul", daytime: ["성수동 베이커리 골목 산책", "서울숲 자전거 코스 한 바퀴", "북카페에서 첫날 여행 메모 정리"], night: ["남산 타워 야경 감상", "종로 포장마차 거리에서 저녁", "한강 피크닉으로 첫날 마무리"] },
+      Tuesday: { ko: "화", city: "Busan", daytime: ["해운대 해변 산책", "블루라인파크 캡슐열차 탑승", "광안리 브런치 카페 방문"], night: ["광안대교 야경 감상", "민락수변공원에서 야식과 바다 구경", "부산 밤바람 따라 산책하며 마무리"] },
+      Wednesday: { ko: "수", city: "Jeonju", daytime: ["전주 한옥마을 골목 산책", "수제 공예 상점 구경", "경기전 앞에서 기념 사진 촬영"], night: ["남부시장 야시장 탐방", "전통찻집에서 한식 디저트 즐기기", "고즈넉한 한옥 스테이 체크인"] },
+      Thursday: { ko: "목", city: "Gangneung", daytime: ["안목해변 커피거리 브런치", "강문해변 산책", "소품숍과 독립서점 둘러보기"], night: ["바닷가 일몰 감상", "초당 순두부 거리에서 저녁 식사", "숙소에서 파도 소리 들으며 휴식"] },
+      Friday: { ko: "금", city: "Jeju", daytime: ["섭지코지 해안 드라이브", "오름 가벼운 트레킹", "감귤 디저트 카페 방문"], night: ["애월 해안도로 노을 감상", "흑돼지 저녁 식사", "별 보이는 숙소 테라스에서 휴식"] },
+      Saturday: { ko: "토", city: "Gyeongju", daytime: ["대릉원 산책", "황리단길 카페 탐방", "첨성대 주변 자전거 라이딩"], night: ["동궁과 월지 야경 감상", "한옥 바에서 전통주 한잔", "고도 분위기를 느끼며 산책"] },
+      Sunday: { ko: "일", city: "Incheon", daytime: ["차이나타운 거리 산책", "개항장 근대 건축물 구경", "월미도 바다열차 체험"], night: ["송도 센트럴파크 야경 보기", "인하대 앞 거리에서 마지막 저녁", "공항 가기 전 여행 사진 정리"] }
+    };
+
+    const DAYS = Object.keys(WEEKLY_DATA);
+    const state = {
+      activeDay: "Monday",
+      thursdayMassiveMode: false,
+      fridayMassiveMode: false,
+      debugModeEnabled: true,
+      hasMountedMassiveThursday: false,
+      hasMountedMassiveFriday: false,
+      lastRenderedProfile: "normal",
+      lastRenderMode: "초기 렌더링",
+      lastDuration: 0,
+      lastDomUpdates: 0,
+      lastReason: "초기 DOM을 읽어서 Virtual DOM으로 만들었습니다."
+    };
+
+    const appHost = document.getElementById("app-host");
+    const whiteboxStatusNode = document.querySelector("[data-whitebox-status]");
+    const whiteboxSummaryNode = document.querySelector("[data-whitebox-summary]");
+    const whiteboxStepsNode = document.querySelector("[data-whitebox-steps]");
+    const dayOverrides = new Map();
+    let currentTree = null;
+    let globalTemplateTree = null;
+    let lastWhiteboxInspection = null;
+    let lastSnapshotSummary = null;
+    const whiteboxPanelState = {
+      activeScenarioId: null,
+      running: false,
+      latest: null,
+      snapshots: []
+    };
+
+    const WHITEBOX_SCENARIOS = {
+      "general-patch": {
+        title: "Scenario 1",
+        subtitle: "Monday -> Tuesday uses Virtual DOM Patch",
+        setup: {
+          activeDay: "Monday",
+          thursdayMassiveMode: false,
+          fridayMassiveMode: false
+        },
+        steps: [
+          {
+            label: "Monday -> Tuesday",
+            action: () => setActiveDay("Tuesday")
+          }
+        ]
+      },
+      "enter-massive": {
+        title: "Scenario 2",
+        subtitle: "Entering Thursday 10,000 mode uses full reload",
+        setup: {
+          activeDay: "Thursday",
+          thursdayMassiveMode: false,
+          fridayMassiveMode: false
+        },
+        steps: [
+          {
+            label: "Enable Thursday 10,000 mode",
+            action: () => toggleThursdayMassiveMode()
+          }
+        ]
+      },
+      "massive-to-massive": {
+        title: "Scenario 3",
+        subtitle: "Thursday massive -> Friday massive stays in keyed patch mode",
+        setup: {
+          activeDay: "Thursday",
+          thursdayMassiveMode: true,
+          fridayMassiveMode: true
+        },
+        steps: [
+          {
+            label: "Thursday massive -> Friday massive",
+            action: () => setActiveDay("Friday")
+          }
+        ]
+      }
+    };
+
+    function cloneVNode(vnode) {
+      return vnode ? JSON.parse(JSON.stringify(vnode)) : null;
+    }
+
+    function formatBoolean(value) {
+      return value ? "true" : "false";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getVNodeChildren(tree, key) {
+      const node = findNodeByKey(tree, key);
+      return node?.children || [];
+    }
+
+    function summarizeOverride(override) {
+      return {
+        saved: Boolean(override),
+        citySaved: Boolean(override?.cityNode),
+        daytimeCount: override?.daytimeList?.children?.length || 0,
+        nightCount: override?.nightList?.children?.length || 0
+      };
+    }
+
+    function buildWhiteboxInspection(stepLabel, decision, previousTree, nextTree, stats, renderMode) {
+      const currentProfile = state.lastRenderedProfile || "normal";
+      const nextProfile = decision.nextProfile;
+      const isCurrentMassive = currentProfile !== "normal";
+      const isNextMassive = nextProfile !== "normal";
+
+      return {
+        stepLabel,
+        activeDay: state.activeDay,
+        thursdayMassiveMode: state.thursdayMassiveMode,
+        fridayMassiveMode: state.fridayMassiveMode,
+        currentProfile,
+        nextProfile,
+        isCurrentMassive,
+        isNextMassive,
+        useFullReload: decision.useFullReload,
+        renderMode,
+        domUpdates: stats.domUpdates,
+        reason: decision.reason
+      };
+    }
+
+    function renderWhiteboxPanel() {
+      if (!whiteboxStatusNode || !whiteboxSummaryNode || !whiteboxStepsNode) return;
+
+      const scenario = whiteboxPanelState.activeScenarioId ? WHITEBOX_SCENARIOS[whiteboxPanelState.activeScenarioId] : null;
+      const latest = whiteboxPanelState.latest;
+      const statusText = whiteboxPanelState.running
+        ? `Running ${scenario ? scenario.title : "scenario"}...`
+        : scenario
+          ? `${scenario.title} complete. Internal values below were captured from the current render pipeline.`
+          : "Select a scenario button to collect the internal render values.";
+
+      whiteboxStatusNode.textContent = statusText;
+
+      if (!latest) {
+        whiteboxSummaryNode.innerHTML = "<p class=\"text-sm text-primary/70\">No scenario has been executed yet.</p>";
+      } else {
+        const modeClass = latest.useFullReload
+          ? "border-amber-200 bg-amber-50 text-amber-900"
+          : "border-emerald-200 bg-emerald-50 text-emerald-900";
+        const profileClass = latest.nextProfile === "normal"
+          ? "border-slate-200 bg-slate-100 text-slate-800"
+          : "border-sky-200 bg-sky-50 text-sky-900";
+        const currentProfileClass = latest.currentProfile === "normal"
+          ? "border-slate-200 bg-slate-100 text-slate-800"
+          : "border-indigo-200 bg-indigo-50 text-indigo-900";
+        whiteboxSummaryNode.innerHTML = `
+          <div class="rounded-2xl border border-outline/70 bg-surface px-4 py-4">
+            <p class="text-sm font-medium text-primary">${escapeHtml(scenario ? scenario.subtitle : latest.stepLabel)}</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span class="rounded-full border px-3 py-1 text-xs font-semibold ${currentProfileClass}">current: ${escapeHtml(latest.currentProfile)}</span>
+              <span class="rounded-full border px-3 py-1 text-xs font-semibold ${modeClass}">${escapeHtml(latest.renderMode)}</span>
+              <span class="rounded-full border px-3 py-1 text-xs font-semibold ${profileClass}">next: ${escapeHtml(latest.nextProfile)}</span>
+              <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-900">reload: ${formatBoolean(latest.useFullReload)}</span>
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl bg-primary px-4 py-4 text-white">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-white/70">Active Day</p>
+              <p class="mt-2 text-2xl font-semibold">${escapeHtml(latest.activeDay)}</p>
+            </div>
+            <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">DOM Updates</p>
+              <p class="mt-2 text-2xl font-semibold text-primary">${escapeHtml(String(latest.domUpdates))}</p>
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Thursday 10K</p>
+              <p class="mt-2 text-lg font-semibold ${latest.thursdayMassiveMode ? "text-sky-900" : "text-primary"}">${formatBoolean(latest.thursdayMassiveMode)}</p>
+            </div>
+            <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Friday 10K</p>
+              <p class="mt-2 text-lg font-semibold ${latest.fridayMassiveMode ? "text-sky-900" : "text-primary"}">${formatBoolean(latest.fridayMassiveMode)}</p>
+            </div>
+            <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Current Massive</p>
+              <p class="mt-2 text-lg font-semibold ${latest.isCurrentMassive ? "text-indigo-900" : "text-primary"}">${formatBoolean(latest.isCurrentMassive)}</p>
+            </div>
+            <div class="rounded-2xl bg-white px-4 py-4 ring-1 ring-outline/70">
+              <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Next Massive</p>
+              <p class="mt-2 text-lg font-semibold ${latest.isNextMassive ? "text-indigo-900" : "text-primary"}">${formatBoolean(latest.isNextMassive)}</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-outline/70 bg-white px-4 py-4">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-accent/70">Reason</p>
+            <p class="mt-2 text-sm leading-relaxed text-primary/80">${escapeHtml(latest.reason)}</p>
+          </div>
+        `;
+      }
+
+      if (whiteboxPanelState.snapshots.length === 0) {
+        whiteboxStepsNode.innerHTML = "<p class=\"text-sm text-primary/70\">Scenario snapshots will appear here.</p>";
+        return;
+      }
+
+      whiteboxStepsNode.innerHTML = whiteboxPanelState.snapshots.map((snapshot, index) => {
+        const modeClass = snapshot.useFullReload
+          ? "border-amber-200 bg-amber-50 text-amber-900"
+          : "border-emerald-200 bg-emerald-50 text-emerald-900";
+        return `
+          <article class="rounded-2xl border border-outline/70 bg-surface px-4 py-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-medium uppercase tracking-[0.25em] text-accent/70">Step ${index + 1}</p>
+                <p class="mt-1 text-sm font-medium text-primary">${escapeHtml(snapshot.stepLabel)}</p>
+              </div>
+              <span class="rounded-full border px-3 py-1 text-xs font-semibold ${modeClass}">${escapeHtml(snapshot.renderMode)}</span>
+            </div>
+            <div class="mt-3 grid gap-2">
+              <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
+                <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Day</span>
+                <span class="text-sm font-semibold text-primary">${escapeHtml(snapshot.activeDay)}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
+                <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Profile</span>
+                <span class="text-sm font-semibold text-primary">${escapeHtml(`${snapshot.currentProfile} -> ${snapshot.nextProfile}`)}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
+                <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Massive Branch</span>
+                <span class="text-sm font-semibold text-primary">${escapeHtml(`${formatBoolean(snapshot.isCurrentMassive)} -> ${formatBoolean(snapshot.isNextMassive)}`)}</span>
+              </div>
+              <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-outline/60">
+                <span class="text-xs uppercase tracking-[0.2em] text-accent/70">Reload</span>
+                <span class="text-sm font-semibold text-primary">${formatBoolean(snapshot.useFullReload)}</span>
+              </div>
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-primary/75">${escapeHtml(snapshot.reason)}</p>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function setWhiteboxScenarioResult(snapshot) {
+      whiteboxPanelState.latest = snapshot;
+      whiteboxPanelState.snapshots.push(snapshot);
+      renderWhiteboxPanel();
+    }
+
+    function waitForPaint() {
+      return new Promise((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+    }
+
+    function resetDemoState(setup = {}) {
+      const preservedDebugMode = state.debugModeEnabled;
+      const activeDay = setup.activeDay || "Monday";
+      const thursdayMassiveMode = Boolean(setup.thursdayMassiveMode);
+      const fridayMassiveMode = Boolean(setup.fridayMassiveMode);
+      const nextProfile = getProfileFromFlags(thursdayMassiveMode, fridayMassiveMode, activeDay);
+      const resetReason = "Scenario reset prepared a deterministic baseline before running the selected white-box case.";
+
+      dayOverrides.clear();
+      state.activeDay = activeDay;
+      state.thursdayMassiveMode = thursdayMassiveMode;
+      state.fridayMassiveMode = fridayMassiveMode;
+      state.debugModeEnabled = preservedDebugMode;
+      state.hasMountedMassiveThursday = thursdayMassiveMode && activeDay === "Thursday";
+      state.hasMountedMassiveFriday = fridayMassiveMode && activeDay === "Friday";
+      state.lastRenderedProfile = nextProfile;
+      state.lastRenderMode = "Scenario reset";
+      state.lastDuration = 0;
+      state.lastDomUpdates = 0;
+      state.lastReason = resetReason;
+
+      const resetTree = buildDefaultAppTree();
+      const stats = createStats();
+      appHost.innerHTML = "";
+      appHost.appendChild(createDomNode(resetTree, stats));
+      currentTree = resetTree;
+      globalTemplateTree = cloneVNode(resetTree);
+      const override = extractDayOverride(currentTree);
+      const snapshotKey = getStateKey();
+      dayOverrides.set(snapshotKey, override);
+      lastSnapshotSummary = {
+        key: snapshotKey,
+        overrideCount: dayOverrides.size,
+        ...summarizeOverride(override)
+      };
+
+      lastWhiteboxInspection = buildWhiteboxInspection(
+        "Scenario baseline",
+        {
+          useFullReload: true,
+          nextProfile,
+          reason: resetReason
+        },
+        null,
+        currentTree,
+        stats,
+        "Scenario reset"
+      );
+
+      logRender("Scenario reset", 0, stats.domUpdates, state.activeDay, resetReason);
+    }
+
+    async function runWhiteboxScenario(scenarioId) {
+      const scenario = WHITEBOX_SCENARIOS[scenarioId];
+      if (!scenario || whiteboxPanelState.running) return;
+
+      whiteboxPanelState.activeScenarioId = scenarioId;
+      whiteboxPanelState.running = true;
+      whiteboxPanelState.latest = null;
+      whiteboxPanelState.snapshots = [];
+      renderWhiteboxPanel();
+
+      resetDemoState(scenario.setup);
+      setWhiteboxScenarioResult({
+        ...lastWhiteboxInspection,
+        stepLabel: `${scenario.title} baseline`
+      });
+      await waitForPaint();
+
+      for (const step of scenario.steps) {
+        step.action();
+        setWhiteboxScenarioResult({
+          ...lastWhiteboxInspection,
+          stepLabel: step.label
+        });
+        await waitForPaint();
+      }
+
+      whiteboxPanelState.running = false;
+      renderWhiteboxPanel();
+    }
+
+    function getProfileFromFlags(thursdayMassiveMode, fridayMassiveMode, day) {
+      if (thursdayMassiveMode && day === "Thursday") return "thursday-massive";
+      if (fridayMassiveMode && day === "Friday") return "friday-massive";
+      return "normal";
+    }
+
+    function getStateKey(day = state.activeDay, thursdayMassiveMode = state.thursdayMassiveMode, fridayMassiveMode = state.fridayMassiveMode) {
+      const profile = getProfileFromFlags(thursdayMassiveMode, fridayMassiveMode, day);
+      return `${day}|${profile}`;
+    }
+
+    function findNodeByKey(vnode, key) {
+      if (!vnode || vnode.type === "TEXT") return null;
+      if (vnode.key === key) return vnode;
+      for (const child of vnode.children || []) {
+        const found = findNodeByKey(child, key);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function extractDayOverride(tree) {
+      const header = findNodeByKey(tree, "header");
+      const daytimeList = findNodeByKey(tree, "daytime-list");
+      const nightList = findNodeByKey(tree, "night-list");
+
+      return {
+        cityNode: header && header.children[2] ? cloneVNode(header.children[2]) : null,
+        daytimeList: cloneVNode(daytimeList),
+        nightList: cloneVNode(nightList)
+      };
+    }
+
+    function saveCurrentSnapshot() {
+      const root = document.getElementById("app-root");
+      if (!root) return;
+
+      const latestTree = domToVNode(root);
+      if (!latestTree) return;
+
+      currentTree = latestTree;
+      globalTemplateTree = cloneVNode(latestTree);
+      const snapshotKey = getStateKey();
+      const override = extractDayOverride(latestTree);
+      dayOverrides.set(snapshotKey, override);
+      lastSnapshotSummary = {
+        key: snapshotKey,
+        overrideCount: dayOverrides.size,
+        ...summarizeOverride(override)
+      };
+    }
+
+    function createScheduleListItems(sectionKey, items) {
+      return items.map((item, index) =>
+        h("li", {
+          key: `${sectionKey}-item-${index}`,
+          "data-stop-index": String(index),
+          className: "rounded-xl border border-outline/60 bg-white px-4 py-3 text-sm leading-relaxed text-primary/85"
+        }, item)
+      );
+    }
+
+    function getDebugButtonLabel() {
+      return state.debugModeEnabled ? "디버깅 모드 켜짐" : "디버깅 모드 켜기";
+    }
+
+    function getDebugButtonClass() {
+      return `rounded-full border px-5 py-2 text-sm font-medium ${state.debugModeEnabled ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`;
+    }
+
+    function getDebugStatusText() {
+      return state.debugModeEnabled
+        ? "디버깅 모드가 활성화되어 콘솔과 VDOM 추적 로그를 출력합니다."
+        : "디버깅 모드가 꺼져 있어 개발용 로그를 숨기고 있습니다.";
+    }
+
+    function buildControlRow() {
+      return h("div", { className: "flex flex-wrap items-center justify-center gap-3" },
+        h("button", {
+          type: "button",
+          key: "toggle-thursday",
+          "data-thursday-massive-toggle": "true",
+          className: `rounded-full border px-5 py-2 text-sm font-medium ${state.thursdayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+        }, state.thursdayMassiveMode ? "목요일 10,000개 데이터 끄기" : "목요일 10,000개 데이터 켜기"),
+        h("button", {
+          type: "button",
+          key: "toggle-friday",
+          "data-friday-massive-toggle": "true",
+          className: `rounded-full border px-5 py-2 text-sm font-medium ${state.fridayMassiveMode ? "border-primary bg-primary text-white" : "border-outline bg-transparent text-primary"}`
+        }, state.fridayMassiveMode ? "금요일 10,000개 데이터 끄기" : "금요일 10,000개 데이터 켜기"),
+        h("button", {
+          type: "button",
+          key: "toggle-debug",
+          "data-debug-toggle": "true",
+          className: getDebugButtonClass()
+        }, getDebugButtonLabel())
+      );
+    }
+
+    function syncDayButtons(navNode, activeDay) {
+      const buttonRow = navNode?.children?.[0];
+      if (!buttonRow || !buttonRow.children) return;
+
+      for (const buttonNode of buttonRow.children) {
+        if (!buttonNode || buttonNode.type !== "ELEMENT") continue;
+
+        const day = buttonNode.props?.["data-day"];
+        const isActive = day === activeDay;
+
+        buttonNode.props = {
+          ...buttonNode.props,
+          className: `relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group ${isActive ? "bg-primary border-primary text-white shadow-lg" : "bg-transparent border-outline text-accent hover:border-primary hover:text-primary"}`
+        };
+
+        const nonIndicatorChildren = (buttonNode.children || []).filter((child) => {
+          return !(child && child.type === "ELEMENT" && child.tag === "span" && child.props?.className === "absolute -bottom-2 w-1 h-1 bg-primary rounded-full");
+        });
+
+        buttonNode.children = isActive
+          ? [...nonIndicatorChildren, h("span", { className: "absolute -bottom-2 w-1 h-1 bg-primary rounded-full" })]
+          : nonIndicatorChildren;
+      }
+    }
+
+    function applyDaySpecificContent(baseTree, day) {
+      const currentSchedule = getScheduleData(day);
+      const override = dayOverrides.get(getStateKey(day));
+
+      const header = findNodeByKey(baseTree, "header");
+      if (header) {
+        if (override?.cityNode) {
+          header.children[2] = cloneVNode(override.cityNode);
+        } else if (header.children[2] && header.children[2].type === "ELEMENT") {
+          header.children[2].children = [{ type: "TEXT", value: currentSchedule.city, key: null }];
+        }
+      }
+
+      const nav = findNodeByKey(baseTree, "nav");
+      if (nav) {
+        syncDayButtons(nav, day);
+      }
+
+      const comparePanel = findNodeByKey(baseTree, "compare-panel");
+      if (comparePanel) {
+        comparePanel.children[2] = h("p", { className: "text-sm font-medium text-primary mb-2", "data-render-info": "true" }, `${state.lastRenderMode} | DOM 蹂寃?${state.lastDomUpdates}??| ${state.lastDuration.toFixed(3)}ms`);
+        comparePanel.children[3] = h("p", { className: "text-xs text-accent/80 leading-relaxed", "data-render-reason": "true" }, state.lastReason);
+      }
+
+      const massivePanel = findNodeByKey(baseTree, "massive-panel");
+      if (massivePanel) {
+        massivePanel.children[1] = buildControlRow();
+        massivePanel.children[2] = h("p", { className: "text-xs text-accent/80 text-center leading-relaxed", "data-debug-status": "true" }, getDebugStatusText());
+      }
+
+      const daytimeList = findNodeByKey(baseTree, "daytime-list");
+      if (daytimeList) {
+        if (override?.daytimeList) {
+          daytimeList.props = cloneVNode(override.daytimeList).props;
+          daytimeList.children = cloneVNode(override.daytimeList).children;
+        } else {
+          daytimeList.children = createScheduleListItems("daytime", currentSchedule.daytime);
+        }
+      }
+
+      const nightList = findNodeByKey(baseTree, "night-list");
+      if (nightList) {
+        if (override?.nightList) {
+          nightList.props = cloneVNode(override.nightList).props;
+          nightList.children = cloneVNode(override.nightList).children;
+        } else {
+          nightList.children = createScheduleListItems("night", currentSchedule.night);
+        }
+      }
+
+      return baseTree;
+    }
+
+    function buildBulkStops(city, prefix, count) {
+      return Array.from({ length: count }, (_, index) => `${city} ${prefix} ${index + 1}`);
+    }
+
+    function getScheduleData(day) {
+      const base = WEEKLY_DATA[day];
+      if (state.thursdayMassiveMode && day === "Thursday") {
+        return { ...base, city: `${base.city} Massive Thursday`, daytime: buildBulkStops(base.city, "낮 일정", MASSIVE_ITEM_COUNT), night: buildBulkStops(base.city, "밤 일정", MASSIVE_ITEM_COUNT) };
+      }
+      if (state.fridayMassiveMode && day === "Friday") {
+        return { ...base, city: `${base.city} Massive Friday`, daytime: buildBulkStops(base.city, "낮 일정", MASSIVE_ITEM_COUNT), night: buildBulkStops(base.city, "밤 일정", MASSIVE_ITEM_COUNT) };
+      }
+      return base;
+    }
+
+    function createStats() {
+      return {
+        domUpdates: 0,
+        operations: []
+      };
+    }
+
+    function pushOperation(stats, type, detail) {
+      if (!state.debugModeEnabled) return;
+      stats.operations.push({
+        type,
+        detail
+      });
+    }
+
+    function logRender(mode, duration, domUpdates, day, reason) {
+      state.lastRenderMode = mode;
+      state.lastDuration = duration;
+      state.lastDomUpdates = domUpdates;
+      state.lastReason = reason;
+
+      if (state.debugModeEnabled) {
+        console.clear();
+        console.log("[여행 일정 VDOM 데모]");
+        console.log("선택한 요일:", day);
+        console.log("렌더링 방식:", mode);
+        console.log("DOM 변경 횟수:", domUpdates);
+        console.log("걸린 시간:", `${duration.toFixed(3)}ms`);
+        console.log("선택 이유:", reason);
+      }
+
+      const modeInfo = document.querySelector("[data-render-info]");
+      const reasonInfo = document.querySelector("[data-render-reason]");
+      if (modeInfo) modeInfo.textContent = `${mode} | DOM 변경 ${domUpdates}회 | ${duration.toFixed(3)}ms`;
+      if (reasonInfo) reasonInfo.textContent = reason;
+      updateDebugStatus();
+
+    }
+
+    function updateDebugStatus() {
+      const debugStatus = document.querySelector("[data-debug-status]");
+      if (debugStatus) debugStatus.textContent = getDebugStatusText();
+    }
+
+    function toOperationSummaryRows(operations = []) {
+      return operations.map((operation, index) => {
+        const base = {
+          no: index + 1,
+          type: operation.type || "UNKNOWN",
+          path: operation.path || operation.detail || "root"
+        };
+
+        if (operation.type === "TEXT") {
+          return {
+            ...base,
+            summary: `${operation.oldText || ""} -> ${operation.text || ""}`.trim()
+          };
+        }
+
+        if (operation.type === "PROPS") {
+          const propKeys = operation.propsDiff ? Object.keys(operation.propsDiff).join(", ") : "";
+          return {
+            ...base,
+            summary: propKeys ? `props: ${propKeys}` : "속성 변경"
+          };
+        }
+
+        if (operation.type === "REPLACE") {
+          return {
+            ...base,
+            summary: `${operation.oldV?.tagName || "?"} -> ${operation.newV?.tagName || "?"}`
+          };
+        }
+
+        if (operation.type === "INSERT" || operation.type === "CREATE") {
+          return {
+            ...base,
+            summary: operation.newV?.tagName ? `<${operation.newV.tagName}> 추가` : "노드 추가"
+          };
+        }
+
+        if (operation.type === "REMOVE") {
+          return {
+            ...base,
+            summary: operation.index !== undefined ? `index ${operation.index} 제거` : "노드 제거"
+          };
+        }
+
+        return {
+          ...base,
+          summary: operation.detail || "변경 사항"
+        };
+      });
+    }
+
+    function logVirtualDomTrees(oldTree, newTree, operations = []) {
+      if (!state.debugModeEnabled) return;
+      console.group("Virtual DOM 객체");
+      console.log("이전 VDOM", oldTree);
+      console.log("새 VDOM", newTree);
+      if (operations.length > 0) {
+        console.log("DOM 변경 작업 배열", toOperationSummaryRows(operations));
+        console.table(toOperationSummaryRows(operations));
+      } else {
+        console.log("DOM 변경 작업", "변경 사항 없음");
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'vdom-log',
+          oldTree,
+          newTree,
+          operations
+        }, '*');
+      }
+      console.groupEnd();
+    }
+
+    function logExternalPatchApplied(oldTree, newTree, operations = []) {
+      if (!state.debugModeEnabled) return;
+      console.group("[메인 데모 Patch 적용]");
+      console.log("이전 VDOM", oldTree);
+      console.log("새 VDOM", newTree);
+      if (operations.length > 0) {
+        console.log("DOM 변경 작업 배열", toOperationSummaryRows(operations));
+        console.table(toOperationSummaryRows(operations));
+      } else {
+        console.log("DOM 변경 작업", "변경 사항 없음");
+      }
+      console.groupEnd();
+    }
+
+    function consumeQueuedExternalPatchLogs() {
+      const tabName = window.name || "";
+      if (!tabName.startsWith("weekly-travel-journal-tab:")) return;
+
+      const tabKey = tabName.slice("weekly-travel-journal-tab:".length);
+      const storageKey = `weekly-travel-journal-patch-log:${tabKey}`;
+
+      try {
+        const queued = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        if (!Array.isArray(queued) || queued.length === 0) return;
+
+        queued.forEach((entry) => {
+          logExternalPatchApplied(entry.oldTree, entry.newTree, entry.operations || []);
+        });
+
+        localStorage.removeItem(storageKey);
+      } catch (_) {
+        // ignore malformed queue
+      }
+    }
+
+    function h(tag, props = {}, ...children) {
+      const normalizedProps = { ...props };
+      const key = normalizedProps.key ?? normalizedProps["data-key"] ?? null;
+      delete normalizedProps.key;
+      return {
+        type: "ELEMENT",
+        tag,
+        key,
+        props: normalizedProps,
+        children: children.flat().map((child) => {
+          if (child === null || child === undefined || child === false) return null;
+          return typeof child === "object" ? child : { type: "TEXT", value: String(child), key: null };
+        }).filter(Boolean)
+      };
+    }
+
+    function domToVNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return { type: "TEXT", value: node.nodeValue || "", key: null };
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+      }
+
+      const props = {};
+      for (const attr of Array.from(node.attributes)) {
+        props[attr.name === "class" ? "className" : attr.name] = attr.value;
+      }
+
+      const children = Array.from(node.childNodes)
+        .map(domToVNode)
+        .filter((child) => child && !(child.type === "TEXT" && child.value.trim() === ""));
+
+      return {
+        type: "ELEMENT",
+        tag: node.tagName.toLowerCase(),
+        key: node.getAttribute("data-key"),
+        props,
+        children
+      };
+    }
+
+    function createDomNode(vnode, stats) {
+      if (vnode.type === "TEXT") {
+        stats.domUpdates += 1;
+        return document.createTextNode(vnode.value);
+      }
+
+      const element = document.createElement(vnode.tag);
+      stats.domUpdates += 1;
+
+      if (vnode.key !== null && vnode.key !== undefined) {
+        element.setAttribute("data-key", vnode.key);
+      }
+
+      updateProps(element, {}, vnode.props, stats);
+      vnode.children.forEach((child) => element.appendChild(createDomNode(child, stats)));
+      return element;
+    }
+
+    function updateProps(element, oldProps, newProps, stats) {
+      Object.keys(oldProps).forEach((key) => {
+        if (key === "data-key") return;
+        if (!(key in newProps)) removeProp(element, key, stats);
+      });
+
+      Object.entries(newProps).forEach(([key, value]) => {
+        if (key === "data-key") return;
+        if (oldProps[key] !== value) setProp(element, key, value, stats);
+      });
+    }
+
+    function setProp(element, key, value, stats) {
+      stats.domUpdates += 1;
+      if (key === "className") {
+        element.setAttribute("class", value);
+        return;
+      }
+      if (value === true) {
+        element.setAttribute(key, "");
+        return;
+      }
+      if (value === false || value === null || value === undefined) {
+        removeProp(element, key, stats);
+        return;
+      }
+      element.setAttribute(key, value);
+    }
+
+    function removeProp(element, key, stats) {
+      stats.domUpdates += 1;
+      if (key === "className") {
+        element.removeAttribute("class");
+        return;
+      }
+      element.removeAttribute(key);
+    }
+
+    function hasNodeChanged(oldNode, newNode) {
+      if (!oldNode || !newNode) return true;
+      if (oldNode.type !== newNode.type) return true;
+      if (oldNode.type === "TEXT" && newNode.type === "TEXT") return false;
+      return oldNode.tag !== newNode.tag;
+    }
+
+    function getNodeKey(vnode, fallbackIndex) {
+      if (!vnode || vnode.type === "TEXT") return null;
+      return vnode.key !== null && vnode.key !== undefined ? vnode.key : `__index_${fallbackIndex}`;
+    }
+
+    function childrenHaveKeys(children) {
+      return children.some((child) => child && child.type === "ELEMENT" && child.key !== null && child.key !== undefined);
+    }
+
+    function hasStableKeyOrder(oldChildren, newChildren) {
+      if (oldChildren.length !== newChildren.length) {
+        return false;
+      }
+
+      for (let index = 0; index < oldChildren.length; index += 1) {
+        if (getNodeKey(oldChildren[index], index) !== getNodeKey(newChildren[index], index)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function getComparableChildNodes(parent) {
+      return Array.from(parent.childNodes).filter((node) => {
+        return !(node.nodeType === Node.TEXT_NODE && (node.nodeValue || "").trim() === "");
+      });
+    }
+
+    function patchNode(parent, existingNode, oldNode, newNode, stats) {
+      if (!oldNode && newNode) {
+        const createdNode = createDomNode(newNode, stats);
+        if (parent) parent.appendChild(createdNode);
+        pushOperation(stats, "노드 추가", newNode.type === "TEXT" ? newNode.value : `<${newNode.tag}>`);
+        return createdNode;
+      }
+
+      if (oldNode && !newNode) {
+        if (parent && existingNode) {
+          parent.removeChild(existingNode);
+          stats.domUpdates += 1;
+          pushOperation(stats, "노드 제거", oldNode.type === "TEXT" ? oldNode.value : `<${oldNode.tag}>`);
+        }
+        return null;
+      }
+
+      if (hasNodeChanged(oldNode, newNode)) {
+        const replacement = createDomNode(newNode, stats);
+        if (parent && existingNode) {
+          parent.replaceChild(replacement, existingNode);
+          stats.domUpdates += 1;
+          pushOperation(
+            stats,
+            "노드 교체",
+            `${oldNode.type === "TEXT" ? oldNode.value : `<${oldNode.tag}>`} -> ${newNode.type === "TEXT" ? newNode.value : `<${newNode.tag}>`}`
+          );
+        }
+        return replacement;
+      }
+
+      if (newNode.type === "TEXT") {
+        if (oldNode.value !== newNode.value) {
+          existingNode.nodeValue = newNode.value;
+          stats.domUpdates += 1;
+          pushOperation(stats, "텍스트 변경", `${oldNode.value} -> ${newNode.value}`);
+        }
+        return existingNode;
+      }
+
+      if (newNode.key !== null && newNode.key !== undefined) {
+        existingNode.setAttribute("data-key", newNode.key);
+      }
+
+      updateProps(existingNode, oldNode.props, newNode.props, stats);
+      patchChildren(existingNode, oldNode.children, newNode.children, stats);
+      return existingNode;
+    }
+
+    function patchChildren(parent, oldChildren, newChildren, stats) {
+      const useKeyedDiff = childrenHaveKeys(oldChildren) || childrenHaveKeys(newChildren);
+
+      if (!useKeyedDiff) {
+        const oldDomChildren = getComparableChildNodes(parent);
+        const maxLength = Math.max(oldChildren.length, newChildren.length);
+        for (let index = 0; index < maxLength; index += 1) {
+          patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+        }
+        return;
+      }
+
+      const oldDomChildren = getComparableChildNodes(parent);
+
+      if (hasStableKeyOrder(oldChildren, newChildren)) {
+        for (let index = 0; index < newChildren.length; index += 1) {
+          patchNode(parent, oldDomChildren[index], oldChildren[index], newChildren[index], stats);
+        }
+        return;
+      }
+
+      const oldMap = new Map();
+      const usedKeys = new Set();
+      const desiredDomOrder = [];
+
+      oldChildren.forEach((child, index) => {
+        const key = getNodeKey(child, index);
+        if (key !== null) {
+          oldMap.set(key, { node: child, domNode: oldDomChildren[index] });
+        }
+      });
+
+      newChildren.forEach((newChild, index) => {
+        const key = getNodeKey(newChild, index);
+        if (key !== null && oldMap.has(key)) {
+          const matched = oldMap.get(key);
+          const patchedDom = patchNode(parent, matched.domNode, matched.node, newChild, stats);
+          desiredDomOrder.push(patchedDom);
+          usedKeys.add(key);
+          return;
+        }
+
+        desiredDomOrder.push(createDomNode(newChild, stats));
+      });
+
+      oldMap.forEach((value, key) => {
+        if (!usedKeys.has(key) && value.domNode && value.domNode.parentNode === parent) {
+          parent.removeChild(value.domNode);
+          stats.domUpdates += 1;
+        }
+      });
+
+      let currentComparableChildren = getComparableChildNodes(parent);
+      desiredDomOrder.forEach((domNode, index) => {
+        const currentNode = currentComparableChildren[index];
+        if (currentNode !== domNode) {
+          parent.insertBefore(domNode, currentNode || null);
+          stats.domUpdates += 1;
+          currentComparableChildren = getComparableChildNodes(parent);
+        }
+      });
+    }
+
+    function decideRenderStrategy() {
+      const nextProfile =
+        state.thursdayMassiveMode && state.activeDay === "Thursday"
+          ? "thursday-massive"
+          : state.fridayMassiveMode && state.activeDay === "Friday"
+            ? "friday-massive"
+            : "normal";
+      const isCurrentMassive = state.lastRenderedProfile !== "normal";
+      const isNextMassive = nextProfile !== "normal";
+
+      if (!currentTree) {
+        return {
+          useFullReload: true,
+          reason: "첫 화면이라 전체 DOM을 만들었습니다.",
+          nextProfile
+        };
+      }
+
+      if (!isCurrentMassive && isNextMassive) {
+        return {
+          useFullReload: true,
+          reason:
+            nextProfile === "thursday-massive"
+              ? "목요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+              : nextProfile === "friday-massive"
+                ? "금요일 10,000개 데이터가 포함된 이동이라 전체 DOM 교체를 선택했습니다."
+                : "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 전체 DOM 교체를 선택했습니다.",
+          nextProfile
+        };
+      }
+
+      if (isCurrentMassive && !isNextMassive) {
+        return {
+          useFullReload: true,
+          reason: "10,000개 대량 리스트에서 일반 크기 리스트로 돌아와서 전체 DOM 교체를 선택했습니다.",
+          nextProfile
+        };
+      }
+
+      if (isCurrentMassive && isNextMassive) {
+        return {
+          useFullReload: false,
+          nextProfile,
+          reason: "10,000개 대량 리스트끼리 이동하므로 Virtual DOM Patch를 사용합니다."
+        };
+      }
+
+      return {
+        useFullReload: false,
+        nextProfile,
+        reason: "기본 구조 비교이므로 Virtual DOM Patch를 사용합니다."
+      };
+    }
+
+    function createDayButton(day) {
+      const isActive = state.activeDay === day;
+      return h(
+        "button",
+        {
+          type: "button",
+          key: `day-${day}`,
+          "data-day": day,
+          className: `relative flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full border group ${isActive ? "bg-primary border-primary text-white shadow-lg" : "bg-transparent border-outline text-accent hover:border-primary hover:text-primary"}`
+        },
+        h("div", { className: "flex flex-col items-center" },
+          h("span", { className: "text-[9px] uppercase tracking-tighter mb-0.5 opacity-60" }, day.substring(0, 3)),
+          h("span", { className: "text-lg font-serif italic leading-none" }, WEEKLY_DATA[day].ko)
+        ),
+        isActive ? h("span", { className: "absolute -bottom-2 w-1 h-1 bg-primary rounded-full" }) : null
+      );
+    }
+
+    function createScheduleSection(title, time, items, sectionKey) {
+      return h(
+        "section",
+        { className: "flex flex-col text-center", key: `${sectionKey}-section` },
+        h("div", { className: "mb-8 relative" },
+          h("h3", { className: "font-serif italic text-3xl text-primary mb-2" }, title),
+          h("div", { className: "w-12 h-[1px] bg-outline mx-auto mb-3" }),
+          h("p", { className: "text-[11px] tracking-[0.2em] text-accent font-medium uppercase" }, time)
+        ),
+        h(
+          "ul",
+          { className: "space-y-4 text-left max-h-[340px] overflow-y-auto px-2", key: `${sectionKey}-list` },
+          createScheduleListItems(sectionKey, items)
+        )
+      );
+    }
+
+    function buildDefaultAppTree() {
+      const currentSchedule = getScheduleData(state.activeDay);
+      return h(
+        "div",
+        { id: "app-root", key: "app-root", className: "min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 bg-background" },
+        h("div", { className: "max-w-5xl w-full", key: "page-shell" },
+          h("header", { className: "text-center mb-16", key: "header" },
+            h("h1", { className: "font-serif italic text-xs tracking-[0.4em] uppercase text-accent mb-6" }, "The Traveler's Notebook"),
+            h("h2", { className: "font-serif text-5xl md:text-6xl font-normal tracking-tight text-primary" }, "Weekly Travel Journal"),
+            h("p", { className: "mt-6 text-sm tracking-[0.28em] uppercase text-accent/70 font-medium" }, currentSchedule.city)
+          ),
+          h("nav", { className: "mb-12", key: "nav" },
+            h("div", { className: "flex justify-center items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto py-4 no-scrollbar" }, DAYS.map(createDayButton))
+          ),
+          h("section", { className: "mb-12 rounded-2xl border border-outline/70 bg-surface px-5 py-4 text-center", key: "compare-panel" },
+            h("p", { className: "text-[11px] uppercase tracking-[0.35em] text-accent/70 font-medium mb-3" }, "렌더링 비교"),
+            h("p", { className: "text-sm text-primary/80 leading-relaxed mb-2" }, "기본 요일 이동은 Virtual DOM Patch를 사용합니다. 목요일과 금요일은 10,000개 데이터가 처음 등장할 때만 한 번 전체 DOM을 만들고, 그 이후 재방문은 key + Map 기반 Patch를 사용합니다."),
+            h("p", { className: "text-sm font-medium text-primary mb-2", "data-render-info": "true" }, `${state.lastRenderMode} | DOM 변경 ${state.lastDomUpdates}회 | ${state.lastDuration.toFixed(3)}ms`),
+            h("p", { className: "text-xs text-accent/80 leading-relaxed", "data-render-reason": "true" }, state.lastReason)
+          ),
+          h("section", { className: "mb-12 flex flex-col items-center gap-4 rounded-2xl border border-outline/70 bg-white px-5 py-4", key: "massive-panel" },
+            h("p", { className: "text-sm text-primary/85 text-center leading-relaxed" }, "목요일과 금요일은 각각 독립적으로 10,000개 데이터를 켤 수 있습니다. 소량 요일에서 큰 구조로 처음 들어갈 때만 전체 교체가 일어나고, 이후 같은 큰 요일을 다시 볼 때는 Patch가 사용됩니다."),
+            buildControlRow(),
+            h("p", { className: "text-xs text-accent/80 text-center leading-relaxed", "data-debug-status": "true" }, getDebugStatusText())
+          ),
+          h("main", { className: "grid md:grid-cols-2 gap-10 md:gap-12 min-h-[300px]", key: "main" },
+            createScheduleSection("Daytime", "09:00 ~ 17:00", currentSchedule.daytime, "daytime"),
+            createScheduleSection("Night", "18:00 ~ 23:00", currentSchedule.night, "night")
+          ),
+          h("footer", { className: "mt-24 pt-12 border-t border-outline/30 text-center", key: "footer" },
+            h("p", { className: "text-[10px] uppercase tracking-[0.4em] text-accent/60 font-medium" }, "Open the developer console to compare patch and full reload logs")
+          )
+        )
+      );
+    }
+
+    function renderApp() {
+      const baseTree = globalTemplateTree ? cloneVNode(globalTemplateTree) : buildDefaultAppTree();
+      return applyDaySpecificContent(baseTree, state.activeDay);
+    }
+
+    function render() {
+      const nextTree = renderApp();
+      const decision = decideRenderStrategy();
+      const stats = createStats();
+      const start = performance.now();
+      const previousTree = currentTree;
+
+      if (decision.useFullReload) {
+        appHost.innerHTML = "";
+        stats.domUpdates += 1;
+        appHost.appendChild(createDomNode(nextTree, stats));
+      } else {
+        patchNode(appHost, appHost.firstElementChild, currentTree, nextTree, stats);
+      }
+
+      currentTree = nextTree;
+      if (state.thursdayMassiveMode && state.activeDay === "Thursday") state.hasMountedMassiveThursday = true;
+      if (state.fridayMassiveMode && state.activeDay === "Friday") state.hasMountedMassiveFriday = true;
+      state.lastRenderedProfile = decision.nextProfile;
+
+      const duration = performance.now() - start;
+      const renderMode = decision.useFullReload ? "전체 DOM 교체" : "Virtual DOM Patch";
+      lastWhiteboxInspection = buildWhiteboxInspection("Latest render", decision, previousTree, nextTree, stats, renderMode);
+      logRender(renderMode, duration, stats.domUpdates, state.activeDay, decision.reason);
+      logVirtualDomTrees(previousTree, nextTree, stats.operations);
+    }
+
+    function setActiveDay(day) {
+      if (state.activeDay === day) return;
+      saveCurrentSnapshot();
+      state.activeDay = day;
+      render();
+    }
+
+    function toggleThursdayMassiveMode() {
+      saveCurrentSnapshot();
+      state.thursdayMassiveMode = !state.thursdayMassiveMode;
+      if (!state.thursdayMassiveMode) state.hasMountedMassiveThursday = false;
+      render();
+    }
+
+    function toggleFridayMassiveMode() {
+      saveCurrentSnapshot();
+      state.fridayMassiveMode = !state.fridayMassiveMode;
+      if (!state.fridayMassiveMode) state.hasMountedMassiveFriday = false;
+      render();
+    }
+
+    function toggleDebugMode() {
+      state.debugModeEnabled = !state.debugModeEnabled;
+      render();
+    }
+
+    document.addEventListener("click", (event) => {
+      const thursdayToggle = event.target.closest("[data-thursday-massive-toggle]");
+      if (thursdayToggle) {
+        toggleThursdayMassiveMode();
+        return;
+      }
+
+      const fridayToggle = event.target.closest("[data-friday-massive-toggle]");
+      if (fridayToggle) {
+        toggleFridayMassiveMode();
+        return;
+      }
+
+      const debugToggle = event.target.closest("[data-debug-toggle]");
+      if (debugToggle) {
+        toggleDebugMode();
+        return;
+      }
+
+      const whiteboxScenarioButton = event.target.closest("[data-whitebox-scenario]");
+      if (whiteboxScenarioButton) {
+        runWhiteboxScenario(whiteboxScenarioButton.dataset.whiteboxScenario);
+        return;
+      }
+
+      const dayButton = event.target.closest("[data-day]");
+      if (dayButton) {
+        setActiveDay(dayButton.dataset.day);
+      }
+    });
+
+    window.addEventListener("message", (event) => {
+      const payload = event.data;
+      if (!payload || payload.type !== "external-patch-applied") return;
+      logExternalPatchApplied(payload.oldTree, payload.newTree, payload.operations || []);
+    });
+
+    currentTree = domToVNode(document.getElementById("app-root"));
+    globalTemplateTree = cloneVNode(currentTree);
+    const initialOverride = extractDayOverride(currentTree);
+    const initialSnapshotKey = getStateKey();
+    dayOverrides.set(initialSnapshotKey, initialOverride);
+    lastSnapshotSummary = {
+      key: initialSnapshotKey,
+      overrideCount: dayOverrides.size,
+      ...summarizeOverride(initialOverride)
+    };
+    logRender("초기 DOM 읽기", 0, 0, state.activeDay, "body 안에 있던 초기 DOM을 읽어서 Virtual DOM으로 변환했습니다.");
+    logVirtualDomTrees(null, currentTree, []);
+    lastWhiteboxInspection = buildWhiteboxInspection(
+      "Initial render",
+      {
+        useFullReload: true,
+        nextProfile: state.lastRenderedProfile,
+        reason: state.lastReason
+      },
+      null,
+      currentTree,
+      createStats(),
+      "초기 DOM 읽기"
+    );
+    renderWhiteboxPanel();
+    consumeQueuedExternalPatchLogs();
+  </script>
+</body>
+</html>
